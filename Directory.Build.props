@@ -1,0 +1,8 @@
+  <Project>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.*" PrivateAssets="All" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="..\..\icon.png" Pack="true" Visible="false" PackagePath="\" />
+	</ItemGroup>
+  </Project>
