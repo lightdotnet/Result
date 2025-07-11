@@ -2,14 +2,14 @@
 Simple result wrapper pattern
 
 ### How to use
-Read more
-- [Result](./src/Result/Contracts/Result.cs) and [ResultOfT](./src/Result/Contracts/ResultOfT.cs)
-- [Paged](./src/Result/Contracts/Paged.cs) and [PagedResult](./src/Result/Contracts/PagedResult.cs)
 ```
 Result.Success(string message = "");
 
 Result<T>.Success(T data, string message = "");
 ```
+Read more
+- [Result](./src/Result/Contracts/Result.cs) and [ResultOfT](./src/Result/Contracts/ResultOfT.cs)
+- [Paged](./src/Result/Contracts/Paged.cs) and [PagedResult](./src/Result/Contracts/PagedResult.cs)
 
 ### Default Result Codes
 You can change the default result codes by set `Code` property in the Result class.
