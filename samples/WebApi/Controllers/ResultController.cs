@@ -104,5 +104,11 @@ namespace WebApi.Controllers
             //return Result<Guid>.Success(Guid.NewGuid());
             return Result<Guid>.Error("Error when get ID");
         }
+
+        public static Result<int> GetResultNumber()
+        {
+            //return Result<Guid>.Success(Guid.NewGuid());
+            return 1;
+        }
     }
 }

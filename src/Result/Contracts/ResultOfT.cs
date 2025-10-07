@@ -34,6 +34,8 @@
             Message = result.Message
         };
 
+        public static implicit operator Result<T>(T data) => new Result<T>(data, "");
+
         public T Data { get; set; }
 
         public static Result<T> Success(T data, string message = "") =>
