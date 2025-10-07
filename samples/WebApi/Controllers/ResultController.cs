@@ -24,12 +24,17 @@ namespace WebApi.Controllers
         [HttpGet]
         public IActionResult Get()
         {
-            //var res = Result.NotFound("Error message");
-            //var res = new Result { Code = "ABC", Message = "" };
+            var obj = new
+            {
+                Success = ResultService.GetSuccess(),
+                Error = ResultService.GetError(),
+                SuccessData = ResultService.GetSuccessData(),
+                ErrorData = ResultService.GetErrorData(),
+                Id = ResultService.GetId(),
+                IdError = ResultService.GetIdButError()
+            };
 
-            var res = Result.Success();
-
-            return Ok(ResultService.GetResult());
+            return new ObjectResult(obj);
         }
 
         [HttpGet("object")]
@@ -50,8 +55,7 @@ namespace WebApi.Controllers
         [HttpGet("error")]
         public IActionResult GetError()
         {
-            var res = Result.Error();
-            return Ok(res);
+            return Ok(Result.Error());
         }
 
         [HttpGet("find")]
@@ -99,16 +103,34 @@ namespace WebApi.Controllers
 
     public static class ResultService
     {
-        public static Result GetResult()
+        public static Result GetSuccess()
         {
-            //return Result<Guid>.Success(Guid.NewGuid());
-            return Result<Guid>.Error("Error when get ID");
+            return Result.Success();
         }
 
-        public static Result<int> GetResultNumber()
+        public static Result GetError()
         {
-            //return Result<Guid>.Success(Guid.NewGuid());
-            return 1;
+            return Result.Error();
+        }
+
+        public static Result<int> GetSuccessData()
+        {
+            return Result<int>.Success(1);
+        }
+
+        public static Result<int> GetErrorData()
+        {
+            return Result.Error("Error when get ID");
+        }
+
+        public static string GetId()
+        {
+            return Result<string>.Success(Guid.NewGuid().ToString());
+        }
+
+        public static string GetIdButError()
+        {
+            return Result<string>.Error();
         }
     }
 }
