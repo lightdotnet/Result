@@ -16,6 +16,8 @@ namespace Light.Contracts
         public PagedResult(IEnumerable<T> data, int page, int pageSize, int count) : this(new Paged<T>(data, page, pageSize, count))
         { }
 
+        public static implicit operator Paged<T>(PagedResult<T> result) => result.Data;
+        
         public Paged<T> Data { get; set; }
     }
 }

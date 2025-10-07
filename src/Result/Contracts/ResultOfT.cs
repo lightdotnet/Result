@@ -27,6 +27,8 @@
 
         public static implicit operator T(Result<T> result) => result.Data;
 
+        public static implicit operator Result<T>(T data) => new Result<T>(data, "");
+
         public static implicit operator Result(Result<T> result) => new Result
         {
             Code = result.Code,
@@ -34,7 +36,14 @@
             Message = result.Message
         };
 
-        public T Data { get; set; }
+        public static implicit operator Result<T>(Result result) => new Result<T>
+        {
+            Code = result.Code,
+            Succeeded = result.Succeeded,
+            Message = result.Message
+        };
+
+        public virtual T Data { get; set; }
 
         public static Result<T> Success(T data, string message = "") =>
             new Result<T>(data, message);
