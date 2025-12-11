@@ -17,7 +17,7 @@ namespace Light.Contracts
         { }
 
         public static implicit operator Paged<T>(PagedResult<T> result) => result.Data;
-        
+
         public Paged<T> Data { get; set; }
     }
 }
