@@ -31,12 +31,7 @@ namespace Light.Contracts
 
         // ── Built-in factories ──────────────────
         public static Result<T> Success(T data, string message = "")
-        {
-            if (data == null)
-                throw new ArgumentNullException(nameof(data),
-                    "Use NotFound() or Error() instead of Success(null).");
-            return new Result<T>(data, message);
-        }
+            => new Result<T>(data, message);
 
         public static Result<T> BadRequest(string message = "")
             => new Result<T>(ResultCode.BadRequest, message);
