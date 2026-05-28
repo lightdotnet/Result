@@ -281,13 +281,12 @@ Only **explicit method calls** with **required parameters** throw:
 ## Web API Usage
 
 ```csharp
-[ApiExplorerSettings(IgnoreApi = true)]
-public virtual IActionResult Ok<T>(T data)
+public static IActionResult ToActionResult(this Light.Contracts.IResult result)
 {
-    var result = data as IResult ?? Result<T>.Success(data);
-    return result.ToActionResult();
-    // data null → Error result (no throw)
-    // data valid → Success result
+    return new ObjectResult(result)
+    {
+        StatusCode = (int)result.ToHttpStatusCode()
+    };
 }
 ```
 
