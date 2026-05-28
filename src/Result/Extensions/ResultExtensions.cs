@@ -27,8 +27,7 @@ namespace Light.Extensions
             pageNumber = pageNumber < 1 ? 1 : pageNumber;
             pageSize = pageSize < 1 ? 10 : pageSize;
 
-            var materialized = list as IList<T>;
-            if (materialized == null)
+            if (!(list is IList<T> materialized))
                 materialized = list.ToList();
 
             var count = materialized.Count;
@@ -57,8 +56,7 @@ namespace Light.Extensions
             pageNumber = pageNumber < 1 ? 1 : pageNumber;
             pageSize = pageSize < 1 ? 10 : pageSize;
 
-            var materialized = list as IList<T>;
-            if (materialized == null)
+            if (!(list is IList<T> materialized))
                 materialized = list.ToList();
 
             var count = materialized.Count;

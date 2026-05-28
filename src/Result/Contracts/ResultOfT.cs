@@ -66,7 +66,7 @@ namespace Light.Contracts
         // T → Result<T> (null → Error, follows Result pattern)
         public static implicit operator Result<T>(T data) => new Result<T>(data);
 
-        // Result<T> → T (must succeed to extract)
+        // Result<T> → T (returns Data directly, developer checks IsSuccess)
         public static implicit operator T(Result<T> result) => result.Data;
 
         // Result<T> → Result (preserves RequestId)
@@ -78,14 +78,11 @@ namespace Light.Contracts
         };
 
         // Result → Result<T> (preserves RequestId)
-        public static implicit operator Result<T>(Result result)
+        public static implicit operator Result<T>(Result result) => new Result<T>
         {
-            return new Result<T>
-            {
-                RequestId = result.RequestId,
-                Status = result.Status,
-                Message = result.Message
-            };
-        }
+            RequestId = result.RequestId,
+            Status = result.Status,
+            Message = result.Message
+        };
     }
 }
