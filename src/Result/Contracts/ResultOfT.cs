@@ -10,7 +10,7 @@ namespace Light.Contracts
         {
             if (data == null)
             {
-                Status = ResultCode.NotFound;
+                Status = ResultCode.Error;
                 Message = string.IsNullOrEmpty(message) ? "Data is null." : message;
             }
             else
@@ -63,53 +63,23 @@ namespace Light.Contracts
 
         // ── Implicit operators ──────────────────
 
-        // T → Result<T>
-        public static implicit operator Result<T>(T data)
-        {
-            if (data == null)
-                throw new ArgumentNullException(nameof(data),
-                    "Cannot implicitly convert null to Result<T>. "
-                    + "Use NotFound() or Error() instead.");
-            return new Result<T>(data);
-        }
+        // T → Result<T> (null → Error, follows Result pattern)
+        public static implicit operator Result<T>(T data) => new Result<T>(data);
 
-        // Result<T> → T
-        public static implicit operator T(Result<T> result)
-        {
-            if (result == null)
-                throw new ArgumentNullException(nameof(result),
-                    "Cannot extract data from a null Result<T>.");
-            if (!result.IsSuccess)
-                throw new InvalidOperationException(
-                    "Cannot extract data from a failed result. "
-                    + "Code: " + result.Code + ", Message: " + result.Message);
-            if (result.Data == null)
-                throw new InvalidOperationException(
-                    "Cannot extract data: Data is null despite success status. "
-                    + "Code: " + result.Code);
-            return result.Data;
-        }
+        // Result<T> → T (must succeed to extract)
+        public static implicit operator T(Result<T> result) => result.Data;
 
         // Result<T> → Result (preserves RequestId)
-        public static implicit operator Result(Result<T> result)
+        public static implicit operator Result(Result<T> result) => new Result
         {
-            if (result == null)
-                throw new ArgumentNullException(nameof(result),
-                    "Cannot implicitly convert null Result<T> to Result.");
-            return new Result
-            {
-                RequestId = result.RequestId,
-                Status = result.Status,
-                Message = result.Message
-            };
-        }
+            RequestId = result.RequestId,
+            Status = result.Status,
+            Message = result.Message
+        };
 
         // Result → Result<T> (preserves RequestId)
         public static implicit operator Result<T>(Result result)
         {
-            if (result == null)
-                throw new ArgumentNullException(nameof(result),
-                    "Cannot implicitly convert null Result to Result<T>.");
             return new Result<T>
             {
                 RequestId = result.RequestId,

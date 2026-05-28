@@ -17,16 +17,22 @@ namespace Light.Contracts
             set { _requestId = value; }
         }
 
-        public virtual ResultCode Status { get; set; } = ResultCode.Unknown;
+        // Field — not serialized by any JSON library by default
+        public ResultCode Status = ResultCode.Unknown;
 
         public string Code
         {
-            get { return Status != null ? Status.Name : ResultCode.Unknown.Name; }
+            get { return !(Status is null) ? Status.Name : ResultCode.Unknown.Name; }
+            set
+            {
+                if (!string.IsNullOrEmpty(value))
+                    Status = ResultCode.FromName(value);
+            }
         }
 
         public bool IsSuccess
         {
-            get { return Status != null && Status.IsSuccess; }
+            get { return !(Status is null) && Status.IsSuccess; }
         }
 
         public virtual string Message { get; set; } = "";
