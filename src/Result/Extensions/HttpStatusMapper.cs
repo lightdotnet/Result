@@ -1,31 +1,17 @@
-﻿using Light.Contracts;
+using Light.Contracts;
 using System.Net;
 
 namespace Light.Extensions
 {
     public static class HttpStatusMapper
     {
-        public static HttpStatusCode MapHttpStatusCode(this IResult result)
+        public static HttpStatusCode ToHttpStatusCode(this IResult result)
         {
-            var code = result.MapResultCode();
+            var rb = result as ResultBase;
+            if (rb != null && rb.Status != null)
+                return (HttpStatusCode)rb.Status.HttpStatus;
 
-            switch (code)
-            {
-                case ResultCode.success:
-                    return HttpStatusCode.OK;
-                case ResultCode.bad_request:
-                    return HttpStatusCode.BadRequest;
-                case ResultCode.unauthorized:
-                    return HttpStatusCode.Unauthorized;
-                case ResultCode.forbidden:
-                    return HttpStatusCode.Forbidden;
-                case ResultCode.not_found:
-                    return HttpStatusCode.NotFound;
-                case ResultCode.conflict:
-                    return HttpStatusCode.Conflict;
-                default:
-                    return HttpStatusCode.InternalServerError;
-            }
+            return HttpStatusCode.InternalServerError;
         }
     }
 }

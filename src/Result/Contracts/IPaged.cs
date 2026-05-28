@@ -1,15 +1,12 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Light.Contracts
 {
     public interface IPaged : IPage
     {
-        int TotalPages { get; set; }
-
+        int TotalPages { get; }
         int TotalRecords { get; set; }
-
         bool HasNextPage { get; }
-
         bool HasPreviousPage { get; }
     }
 

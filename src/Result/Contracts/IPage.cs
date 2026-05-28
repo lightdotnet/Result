@@ -1,9 +1,8 @@
-﻿namespace Light.Contracts
+namespace Light.Contracts
 {
     public interface IPage
     {
-        int Page { get; set; }
-
+        int PageNumber { get; set; }
         int PageSize { get; set; }
     }
 }

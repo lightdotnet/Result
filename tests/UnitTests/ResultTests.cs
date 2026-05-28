@@ -31,11 +31,11 @@ namespace UnitTests
         }
 
         [Theory]
-        [InlineData(ResultCode.success, "Success message")]
-        [InlineData(ResultCode.error, "Error message")]
-        [InlineData(ResultCode.bad_request, "BadRequest message")]
-        [InlineData(ResultCode.unauthorized, "Unauthorized message")]
-        [InlineData(ResultCode.not_found, "NotFound message")]
+        [InlineData(ResultCode.Success, "Success message")]
+        [InlineData(ResultCode.Error, "Error message")]
+        [InlineData(ResultCode.BadRequest, "BadRequest message")]
+        [InlineData(ResultCode.Unauthorized, "Unauthorized message")]
+        [InlineData(ResultCode.NotFound, "NotFound message")]
         public void Should_Return_Correct_Result(ResultCode code, string message)
         {
             var result = new Result
@@ -73,8 +73,8 @@ namespace UnitTests
             var success = JsonSerializer.Deserialize<Result>(successJson);
             var error = JsonSerializer.Deserialize<Result>(errorJson);
 
-            success.MapResultCode().ShouldBe(ResultCode.success);
-            error.MapResultCode().ShouldBe(ResultCode.error);
+            success.MapResultCode().ShouldBe(ResultCode.Success);
+            error.MapResultCode().ShouldBe(ResultCode.Error);
         }
     }
 }
