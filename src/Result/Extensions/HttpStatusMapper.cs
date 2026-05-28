@@ -7,8 +7,7 @@ namespace Light.Extensions
     {
         public static HttpStatusCode ToHttpStatusCode(this IResult result)
         {
-            var rb = result as ResultBase;
-            if (rb != null && rb.Status != null)
+            if (result is ResultBase rb && rb.Status != null)
                 return (HttpStatusCode)rb.Status.HttpStatus;
 
             return HttpStatusCode.InternalServerError;

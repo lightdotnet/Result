@@ -33,7 +33,7 @@ namespace Light.Contracts
 
         public bool Equals(ResultCode other)
         {
-            if (ReferenceEquals(other, null)) return false;
+            if (other is null) return false;
             return Name == other.Name;
         }
 
@@ -50,7 +50,7 @@ namespace Light.Contracts
         public static bool operator ==(ResultCode left, ResultCode right)
         {
             if (ReferenceEquals(left, right)) return true;
-            if (ReferenceEquals(left, null) || ReferenceEquals(right, null)) return false;
+            if (left is null || right is null) return false;
             return left.Equals(right);
         }
 
