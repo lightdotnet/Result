@@ -295,7 +295,7 @@ public static IActionResult ToActionResult(this Light.Contracts.IResult result)
 ## Project Structure
 
 ```
-Light.Contracts/
+Result.Contracts/
 ├── ResultCode.cs          — Smart enum with built-in codes
 ├── IResult.cs             — IResult, IResult<T> interfaces
 ├── ResultBase.cs          — Abstract base (Status field, Code property)
@@ -306,6 +306,7 @@ Light.Contracts/
 ├── Paged.cs               — Paged, Paged<T> classes
 ├── PagedResult.cs         — PagedResult<T>
 ├── PropertyOrder.cs       — [PropertyOrder] attribute
+Result.Extensions/
 ├── HttpStatusMapper.cs    — ToHttpStatusCode() extension
 └── ResultExtensions.cs    — IsFailed, ToPaged, ToPagedResult
 ```
