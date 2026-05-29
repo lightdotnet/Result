@@ -1,3 +1,6 @@
+[![NuGet](https://img.shields.io/nuget/v/Lightsoft.Result.svg?label=Lightsoft.Result%20-%20nuget)](https://www.nuget.org/packages/Lightsoft.Result)
+[![.NET Standard](https://img.shields.io/badge/netstandard-2.0-blue.svg)]()
+
 # Light.Contracts
 
 A lightweight, zero-dependency Result Pattern library for .NET Standard 2.0+ / C# 7.3+.
