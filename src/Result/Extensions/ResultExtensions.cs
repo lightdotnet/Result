@@ -2,6 +2,7 @@ using Light.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 
 namespace Light.Extensions
 {
@@ -10,6 +11,14 @@ namespace Light.Extensions
         public static bool IsFailed(this IResult result)
         {
             return !result.IsSuccess;
+        }
+
+        public static HttpStatusCode ToHttpStatusCode(this IResult result)
+        {
+            if (result is ResultBase rb && rb.Status != null)
+                return (HttpStatusCode)rb.Status.HttpStatus;
+
+            return HttpStatusCode.InternalServerError;
         }
 
         public static PagedResult<T> ToPagedResult<T>(

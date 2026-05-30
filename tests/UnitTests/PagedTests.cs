@@ -1,9 +1,5 @@
 #nullable disable
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
-using NUnit.Framework;
 
 namespace UnitTests
 {
@@ -26,7 +22,6 @@ namespace UnitTests
         public void Should_Return_Correct_PageInfo()
         {
             var result = _list.ToPagedResult(1, _pageSize);
-
             result.IsSuccess.ShouldBeTrue();
             result.Data.PageNumber.ShouldBe(1);
             result.Data.PageSize.ShouldBe(_pageSize);
@@ -44,10 +39,8 @@ namespace UnitTests
         public void Should_Serialize_Correct_PagedData()
         {
             var paged = _list.ToPaged(1, _pageSize);
-
             var json = JsonSerializer.Serialize(paged);
             var deserialized = JsonSerializer.Deserialize<Paged<int>>(json);
-
             deserialized.PageNumber.ShouldBe(1);
             deserialized.PageSize.ShouldBe(_pageSize);
             deserialized.TotalRecords.ShouldBe(_totalRecords);
@@ -97,7 +90,6 @@ namespace UnitTests
         {
             IEnumerable<int> nullList = null;
             var result = nullList.ToPagedResult();
-
             result.IsSuccess.ShouldBeFalse();
             result.Code.ShouldBe("error");
         }
@@ -115,7 +107,6 @@ namespace UnitTests
         public void ToPagedResult_Should_Clamp_Invalid_Values()
         {
             var result = _list.ToPagedResult(0, -1);
-
             result.Data.PageNumber.ShouldBe(1);
             result.Data.PageSize.ShouldBe(10);
         }
@@ -125,7 +116,6 @@ namespace UnitTests
         {
             IPage page = new Paged { PageNumber = 2, PageSize = 3 };
             var result = _list.ToPagedResult(page);
-
             result.IsSuccess.ShouldBeTrue();
             result.Data.PageNumber.ShouldBe(2);
             result.Data.PageSize.ShouldBe(3);
@@ -156,7 +146,6 @@ namespace UnitTests
         {
             IPage page = new Paged { PageNumber = 1, PageSize = 4 };
             var paged = _list.ToPaged(page);
-
             paged.PageNumber.ShouldBe(1);
             paged.PageSize.ShouldBe(4);
             paged.TotalRecords.ShouldBe(_totalRecords);
@@ -167,7 +156,6 @@ namespace UnitTests
         public void PagedResult_Null_Data_Should_Return_Error()
         {
             var result = new PagedResult<int>((Paged<int>)null);
-
             result.IsSuccess.ShouldBeFalse();
             result.Code.ShouldBe("error");
             result.Data.ShouldBeNull();
@@ -178,7 +166,6 @@ namespace UnitTests
         {
             var result = _list.ToPagedResult(1, _pageSize);
             Paged<int> paged = result;
-
             paged.ShouldNotBeNull();
             paged.PageNumber.ShouldBe(1);
             paged.Records.Count().ShouldBe(_pageSize);
@@ -189,7 +176,6 @@ namespace UnitTests
         {
             PagedResult<int> nullResult = null;
             Paged<int> paged = nullResult;
-
             paged.ShouldBeNull();
         }
 
@@ -198,7 +184,6 @@ namespace UnitTests
         {
             var result = new PagedResult<int>();
             Paged<int> paged = result;
-
             paged.ShouldBeNull();
         }
     }

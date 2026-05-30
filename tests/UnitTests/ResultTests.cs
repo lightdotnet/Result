@@ -1,8 +1,6 @@
 #nullable disable
-using System;
 using System.Net;
 using System.Text.Json;
-using NUnit.Framework;
 
 namespace UnitTests
 {
@@ -55,11 +53,9 @@ namespace UnitTests
         {
             var result = new Result();
             result.Code = "not_found";
-
             result.Status.ShouldBe(ResultCode.NotFound);
             result.IsSuccess.ShouldBeFalse();
             result.Code.ShouldBe("not_found");
-
             result.Code = "success";
             result.Status.ShouldBe(ResultCode.Success);
             result.IsSuccess.ShouldBeTrue();
@@ -71,7 +67,6 @@ namespace UnitTests
             var result = Result.Success();
             result.Code = "";
             result.Status.ShouldBe(ResultCode.Success);
-
             result.Code = null;
             result.Status.ShouldBe(ResultCode.Success);
         }
@@ -95,7 +90,6 @@ namespace UnitTests
         {
             var r1 = Result.Success();
             var r2 = Result.Success();
-
             r1.RequestId.ShouldNotBeNullOrEmpty();
             r2.RequestId.ShouldNotBeNullOrEmpty();
             (r1.RequestId != r2.RequestId).ShouldBeTrue();
@@ -114,7 +108,6 @@ namespace UnitTests
         {
             var custom = new ResultCode("custom", 418);
             var result = Result.From(custom, "I'm a teapot");
-
             result.Status.ShouldBe(custom);
             result.Code.ShouldBe("custom");
             result.Message.ShouldBe("I'm a teapot");
@@ -136,7 +129,6 @@ namespace UnitTests
             var intResult = Result<int>.Success(id);
             intResult.Data.ShouldBe(id);
             intResult.IsSuccess.ShouldBeTrue();
-
             var strResult = Result<string>.Success($"ID-{id}");
             strResult.Data.ShouldBe($"ID-{id}");
             strResult.IsSuccess.ShouldBeTrue();
@@ -146,7 +138,6 @@ namespace UnitTests
         public void Success_Null_Should_Return_Error()
         {
             var result = Result<string>.Success(null);
-
             result.IsSuccess.ShouldBeFalse();
             result.Code.ShouldBe("error");
             result.Data.ShouldBeNull();
@@ -188,7 +179,6 @@ namespace UnitTests
         {
             string data = "hello";
             Result<string> result = data;
-
             result.IsSuccess.ShouldBeTrue();
             result.Data.ShouldBe("hello");
             result.Code.ShouldBe("success");
@@ -199,7 +189,6 @@ namespace UnitTests
         {
             string nullData = null;
             Result<string> result = nullData;
-
             result.IsSuccess.ShouldBeFalse();
             result.Code.ShouldBe("error");
             result.Data.ShouldBeNull();
@@ -234,9 +223,7 @@ namespace UnitTests
         {
             var typed = Result<string>.Success("data", "msg");
             var requestId = typed.RequestId;
-
             Result simple = typed;
-
             simple.RequestId.ShouldBe(requestId);
             simple.Status.ShouldBe(ResultCode.Success);
             simple.Message.ShouldBe("msg");
@@ -247,9 +234,7 @@ namespace UnitTests
         {
             var simple = Result.NotFound("msg");
             var requestId = simple.RequestId;
-
             Result<string> typed = simple;
-
             typed.RequestId.ShouldBe(requestId);
             typed.Status.ShouldBe(ResultCode.NotFound);
             typed.Message.ShouldBe("msg");
@@ -285,7 +270,6 @@ namespace UnitTests
         {
             var result = Result.Success("ok");
             var json = JsonSerializer.Serialize(result);
-
             Assert.That(json, Does.Contain(@"""Code"""));
             Assert.That(json, Does.Contain(@"""IsSuccess"""));
             Assert.That(json, Does.Contain(@"""Message"""));
@@ -299,7 +283,6 @@ namespace UnitTests
             var original = Result.NotFound("not here");
             var json = JsonSerializer.Serialize(original);
             var restored = JsonSerializer.Deserialize<Result>(json);
-
             restored.Code.ShouldBe("not_found");
             restored.IsSuccess.ShouldBeFalse();
             restored.Status.ShouldBe(ResultCode.NotFound);
@@ -312,11 +295,29 @@ namespace UnitTests
             var original = Result<string>.Success("hello", "msg");
             var json = JsonSerializer.Serialize(original);
             var restored = JsonSerializer.Deserialize<Result<string>>(json);
-
             restored.Code.ShouldBe("success");
             restored.IsSuccess.ShouldBeTrue();
             restored.Data.ShouldBe("hello");
             restored.Message.ShouldBe("msg");
+        }
+
+        // ── PropertyOrderAttribute ─────────────────
+
+        [Test]
+        public void PropertyOrderAttribute_Should_Set_Order()
+        {
+            var attr = new PropertyOrderAttribute(5);
+            attr.Order.ShouldBe(5);
+        }
+
+        [Test]
+        public void PropertyOrderAttribute_Should_Have_Correct_Usage()
+        {
+            var usage = (AttributeUsageAttribute)Attribute.GetCustomAttribute(
+                typeof(PropertyOrderAttribute), typeof(AttributeUsageAttribute));
+            Assert.That(usage, Is.Not.Null);
+            Assert.That(usage.ValidOn, Is.EqualTo(AttributeTargets.Field | AttributeTargets.Property));
+            usage.AllowMultiple.ShouldBeFalse();
         }
     }
 }

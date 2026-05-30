@@ -1,7 +1,4 @@
 #nullable disable
-using System;
-using NUnit.Framework;
-
 namespace UnitTests
 {
     [TestFixture]

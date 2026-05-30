@@ -41,21 +41,21 @@ Result<User> result = Result<User>.Success(user);
 // Error without data
 Result<User> result = Result<User>.NotFound("User not found.");
 
-// Implicit conversion — no need for Result<T>.Success()
-Result<string> result = "hello";      // → Success
-Result<string> result = (string)null; // → Error (no throw)
+// Implicit conversion
+Result<string> result = "hello";      // Success
+Result<string> result = (string)null; // Error (no throw)
 
-// Extract data — developer checks IsSuccess first
+// Extract data
 if (result.IsSuccess)
 {
-    User user = result;  // implicit Result<T> → T
+    User user = result;  // implicit Result<T> -> T
 }
 
 // Non-generic result
 Result result = Result.Success("Operation completed.");
 
 // HTTP status mapping
-HttpStatusCode status = result.ToHttpStatusCode();  // → 200
+HttpStatusCode status = result.ToHttpStatusCode();  // 200
 
 // Paging
 var paged = list.ToPagedResult(pageNumber: 1, pageSize: 10);
@@ -87,13 +87,13 @@ var rateLimited = new ResultCode("rate_limited", 429);
 new ResultCode("test", 200) == new ResultCode("test", 500)  // true
 
 // Implicit string conversion
-string code = ResultCode.Success;  // → "success"
-string code = (ResultCode)null;    // → null (no throw)
+string code = ResultCode.Success;  // "success"
+string code = (ResultCode)null;    // null (no throw)
 
-// FromName — for deserialization
-ResultCode.FromName("not_found")   // → ResultCode.NotFound (singleton)
-ResultCode.FromName("custom")      // → new ResultCode("custom", 500)
-ResultCode.FromName(null)          // → ResultCode.Unknown
+// FromName for deserialization
+ResultCode.FromName("not_found")   // ResultCode.NotFound (singleton)
+ResultCode.FromName("custom")      // new ResultCode("custom", 500)
+ResultCode.FromName(null)          // ResultCode.Unknown
 ```
 
 ### IResult / IResult\<T\>
@@ -121,11 +121,11 @@ Abstract base class for all result types.
 
 | Member | Type | Serialized | Description |
 |--------|------|------------|-------------|
-| `RequestId` | `string` | ✅ | Lazy-generated GUID |
-| `Status` | `ResultCode` | ❌ **Field** | Not serialized by any JSON library |
-| `Code` | `string` | ✅ | Getter reads `Status.Name`, setter calls `FromName()` |
-| `IsSuccess` | `bool` | ✅ | Computed from `Status.IsSuccess` |
-| `Message` | `string` | ✅ | Default `""` |
+| `RequestId` | `string` | Yes | Lazy-generated GUID |
+| `Status` | `ResultCode` | **No (field)** | Not serialized by any JSON library |
+| `Code` | `string` | Yes | Getter reads `Status.Name`, setter calls `FromName()` |
+| `IsSuccess` | `bool` | Yes | Computed from `Status.IsSuccess` |
+| `Message` | `string` | Yes | Default `""` |
 
 ### Result
 
@@ -148,31 +148,31 @@ Generic result with `Data`. Factory methods + implicit operators:
 
 ```csharp
 // Factories
-Result<T>.Success(data, "message")  // null data → Error result (no throw)
+Result<T>.Success(data, "message")  // null data -> Error result (no throw)
 Result<T>.NotFound("message")
 Result<T>.Error("message")
 Result<T>.From(customCode, "message")
 
-// Implicit operators — NONE throw
-Result<string> r = "hello";          // T → Result<T>: Success
-Result<string> r = (string)null;     // T → Result<T>: Error (no throw)
-string value = r;                    // Result<T> → T: returns .Data
-Result simple = r;                   // Result<T> → Result: preserves RequestId
-Result<string> typed = simple;       // Result → Result<T>: preserves RequestId
+// Implicit operators - NONE throw
+Result<string> r = "hello";          // T -> Result<T>: Success
+Result<string> r = (string)null;     // T -> Result<T>: Error (no throw)
+string value = r;                    // Result<T> -> T: returns .Data
+Result simple = r;                   // Result<T> -> Result: preserves RequestId
+Result<string> typed = simple;       // Result -> Result<T>: preserves RequestId
 ```
 
 ---
 
-## Implicit Operators — Behavior Matrix
+## Implicit Operators - Behavior Matrix
 
 | Operator | null input | Behavior |
 |----------|-----------|----------|
-| `T → Result<T>` | null | Error result (`Code = "error"`) |
-| `Result<T> → T` | — | Returns `.Data` (may be null/default) |
-| `Result<T> → Result` | null | NullReferenceException (standard .NET) |
-| `Result → Result<T>` | null | NullReferenceException (standard .NET) |
-| `ResultCode → string` | null | Returns `null` |
-| `PagedResult<T> → Paged<T>` | null | Returns `null` |
+| `T -> Result<T>` | null | Error result (`Code = "error"`) |
+| `Result<T> -> T` | -- | Returns `.Data` (may be null/default) |
+| `Result<T> -> Result` | null | NullReferenceException (standard .NET) |
+| `Result -> Result<T>` | null | NullReferenceException (standard .NET) |
+| `ResultCode -> string` | null | Returns `null` |
+| `PagedResult<T> -> Paged<T>` | null | Returns `null` |
 
 > **Design principle:** Implicit operators **never throw custom exceptions**. Developer checks `IsSuccess` before accessing `Data`.
 
@@ -182,28 +182,28 @@ Result<string> typed = simple;       // Result → Result<T>: preserves RequestI
 
 ```csharp
 // Interfaces (all get-only)
-IPage       → PageNumber, PageSize
-IPaged      → TotalPages, TotalRecords, HasNextPage, HasPreviousPage
-IPaged<T>   → Records
+IPage       -> PageNumber, PageSize
+IPaged      -> TotalPages, TotalRecords, HasNextPage, HasPreviousPage
+IPaged<T>   -> Records
 
 // Classes
-Paged       → implements IPaged
-Paged<T>    → implements IPaged<T>, inherits Paged
-PagedResult<T> → ResultBase + IResult<Paged<T>>
+Paged       -> implements IPaged
+Paged<T>    -> implements IPaged<T>, inherits Paged
+PagedResult<T> -> ResultBase + IResult<Paged<T>>
 
 // Usage
 var paged = list.ToPaged(pageNumber: 1, pageSize: 10);
 var result = list.ToPagedResult(pageNumber: 1, pageSize: 10);
 
 // Implicit conversion
-Paged<int> data = pagedResult;  // null → null (no throw)
+Paged<int> data = pagedResult;  // null -> null (no throw)
 
 // TotalPages calculation
 // PageSize > 0: Math.Ceiling(TotalRecords / PageSize)
 // PageSize <= 0: 0
 
 // Invalid values auto-clamped
-list.ToPagedResult(0, -1);  // → pageNumber=1, pageSize=10
+list.ToPagedResult(0, -1);  // pageNumber=1, pageSize=10
 ```
 
 ---
@@ -213,18 +213,18 @@ list.ToPagedResult(0, -1);  // → pageNumber=1, pageSize=10
 ```csharp
 using Light.Extensions;
 
-// IsFailed — opposite of IsSuccess
+// IsFailed
 result.IsFailed();  // true if !IsSuccess
 
-// ToHttpStatusCode — maps Status.HttpStatus to System.Net.HttpStatusCode
-result.ToHttpStatusCode();  // Success → 200, NotFound → 404, etc.
+// ToHttpStatusCode
+result.ToHttpStatusCode();  // Success -> 200, NotFound -> 404, etc.
 
-// ToPagedResult — from IEnumerable<T>
+// ToPagedResult
 list.ToPagedResult(pageNumber, pageSize);
 list.ToPagedResult(iPage);
-nullList.ToPagedResult();  // → Error result (no throw)
+nullList.ToPagedResult();  // Error result (no throw)
 
-// ToPaged — from IEnumerable<T>
+// ToPaged
 list.ToPaged(pageNumber, pageSize);
 list.ToPaged(iPage);
 ```
@@ -284,12 +284,14 @@ Only **explicit method calls** with **required parameters** throw:
 ## Web API Usage
 
 ```csharp
-public static IActionResult ToActionResult(this Light.Contracts.IResult result)
+[ApiExplorerSettings(IgnoreApi = true)]
+public virtual IActionResult Ok<T>(T data)
 {
-    return new ObjectResult(result)
-    {
-        StatusCode = (int)result.ToHttpStatusCode()
-    };
+    var result = data as IResult ?? Result<T>.Success(data);
+    var statusCode = (int)result.ToHttpStatusCode();
+    return StatusCode(statusCode, result);
+    // data null -> Error result (no throw)
+    // data valid -> Success result
 }
 ```
 
@@ -308,9 +310,8 @@ Result.Contracts/
 ├── IPaged.cs              — IPaged, IPaged<T> interfaces
 ├── Paged.cs               — Paged, Paged<T> classes
 ├── PagedResult.cs         — PagedResult<T>
-├── PropertyOrder.cs       — [PropertyOrder] attribute
+├── PropertyOrderAttribute.cs       — [PropertyOrder] attribute
 Result.Extensions/
-├── HttpStatusMapper.cs    — ToHttpStatusCode() extension
 └── ResultExtensions.cs    — IsFailed, ToPaged, ToPagedResult
 ```
 
