@@ -1,13 +1,10 @@
-﻿namespace Light.Contracts
+namespace Light.Contracts
 {
     public interface IResult
     {
-        string RequestId { get; set; }
-
+        string RequestId { get; }
         string Code { get; }
-
-        bool Succeeded { get; }
-
+        bool IsSuccess { get; }
         string Message { get; }
     }
 

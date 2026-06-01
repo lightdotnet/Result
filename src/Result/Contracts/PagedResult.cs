@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Light.Contracts
 {
@@ -8,15 +8,23 @@ namespace Light.Contracts
 
         public PagedResult(Paged<T> data)
         {
-            Code = ResultCode.success.ToString();
-            Succeeded = true;
-            Data = data;
+            if (data == null)
+            {
+                Status = ResultCode.Error;
+                Message = "Data is null.";
+            }
+            else
+            {
+                Status = ResultCode.Success;
+                Data = data;
+            }
         }
 
-        public PagedResult(IEnumerable<T> data, int page, int pageSize, int count) : this(new Paged<T>(data, page, pageSize, count))
+        public PagedResult(IEnumerable<T> data, int pageNumber, int pageSize, int totalRecords)
+            : this(new Paged<T>(data, pageNumber, pageSize, totalRecords))
         { }
 
-        public static implicit operator Paged<T>(PagedResult<T> result) => result.Data;
+        public static implicit operator Paged<T>(PagedResult<T> result) => result?.Data;
 
         public Paged<T> Data { get; set; }
     }

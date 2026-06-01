@@ -1,80 +1,323 @@
+#nullable disable
+using System.Net;
 using System.Text.Json;
 
 namespace UnitTests
 {
+    [TestFixture]
     public class ResultTests
     {
-        [Fact]
-        public void Should_True_When_Success()
+        [Test]
+        public void Success_IsSuccess_True()
         {
-            var success = Result.Success();
-            var error = Result.Error();
-
-            success.Succeeded.ShouldBeTrue();
-            error.Succeeded.ShouldBeFalse();
+            Result.Success().IsSuccess.ShouldBeTrue();
         }
 
-        [Fact]
-        public void Should_Map_Correct_ResultCode()
+        [Test]
+        public void Error_IsSuccess_False()
         {
-            var success = Result.Success();
-            var error = Result.Error();
-            var unauthorized = Result.Unauthorized();
-            var notFound = Result.NotFound();
-            var unknown = new Result { Code = "OtherCode" };
-
-            success.MapResultCode().ShouldBe(ResultCode.success);
-            error.MapResultCode().ShouldBe(ResultCode.error);
-            unauthorized.MapResultCode().ShouldBe(ResultCode.unauthorized);
-            notFound.MapResultCode().ShouldBe(ResultCode.not_found);
-            unknown.MapResultCode().ShouldBe(ResultCode.unknown);
+            Result.Error().IsSuccess.ShouldBeFalse();
         }
 
-        [Theory]
-        [InlineData(ResultCode.success, "Success message")]
-        [InlineData(ResultCode.error, "Error message")]
-        [InlineData(ResultCode.bad_request, "BadRequest message")]
-        [InlineData(ResultCode.unauthorized, "Unauthorized message")]
-        [InlineData(ResultCode.not_found, "NotFound message")]
-        public void Should_Return_Correct_Result(ResultCode code, string message)
+        [Test]
+        public void All_Factories_Should_Return_Correct_Status()
         {
-            var result = new Result
-            {
-                Code = code.ToString(),
-                Message = message,
-            };
-
-            var mappedResultCode = result.MapResultCode();
-
-            mappedResultCode.ShouldBe(code);
-
-            result.Message.ShouldBe(message);
+            Result.Success().Status.ShouldBe(ResultCode.Success);
+            Result.BadRequest().Status.ShouldBe(ResultCode.BadRequest);
+            Result.Unauthorized().Status.ShouldBe(ResultCode.Unauthorized);
+            Result.Forbidden().Status.ShouldBe(ResultCode.Forbidden);
+            Result.NotFound().Status.ShouldBe(ResultCode.NotFound);
+            Result.Conflict().Status.ShouldBe(ResultCode.Conflict);
+            Result.Error().Status.ShouldBe(ResultCode.Error);
         }
 
-        [Theory]
-        [InlineData(1)]
-        [InlineData(2)]
-        [InlineData(3)]
-        public void Should_Return_Correct_Data(int id)
+        [Test]
+        public void Default_Constructor_Should_Be_Unknown()
         {
-            var intId = Result<int>.Success(id);
-            var stringId = Result<string>.Success($"ID-{id}");
-
-            intId.Data.ShouldBe(id);
-            stringId.Data.ShouldBe($"ID-{id}");
+            var result = new Result();
+            result.Status.ShouldBe(ResultCode.Unknown);
+            result.IsSuccess.ShouldBeFalse();
+            result.Code.ShouldBe("unknown");
         }
 
-        [Fact]
-        public void Should_Deserialize_Correct_Result()
+        [Test]
+        public void Code_Should_Return_Status_Name()
         {
-            var successJson = JsonSerializer.Serialize(Result.Success());
-            var errorJson = JsonSerializer.Serialize(Result.Error());
+            Result.Success().Code.ShouldBe("success");
+            Result.Error().Code.ShouldBe("error");
+            Result.NotFound("msg").Code.ShouldBe("not_found");
+        }
 
-            var success = JsonSerializer.Deserialize<Result>(successJson);
-            var error = JsonSerializer.Deserialize<Result>(errorJson);
+        [Test]
+        public void Code_Setter_Should_Sync_Status()
+        {
+            var result = new Result();
+            result.Code = "not_found";
+            result.Status.ShouldBe(ResultCode.NotFound);
+            result.IsSuccess.ShouldBeFalse();
+            result.Code.ShouldBe("not_found");
+            result.Code = "success";
+            result.Status.ShouldBe(ResultCode.Success);
+            result.IsSuccess.ShouldBeTrue();
+        }
 
-            success.MapResultCode().ShouldBe(ResultCode.success);
-            error.MapResultCode().ShouldBe(ResultCode.error);
+        [Test]
+        public void Code_Setter_Empty_Should_Not_Change_Status()
+        {
+            var result = Result.Success();
+            result.Code = "";
+            result.Status.ShouldBe(ResultCode.Success);
+            result.Code = null;
+            result.Status.ShouldBe(ResultCode.Success);
+        }
+
+        [Test]
+        public void Message_Should_Default_Empty()
+        {
+            new Result().Message.ShouldBe("");
+        }
+
+        [Test]
+        public void Message_Should_Be_Set()
+        {
+            Result.Success("ok").Message.ShouldBe("ok");
+            Result.Error("fail").Message.ShouldBe("fail");
+            Result<string>.NotFound("missing").Message.ShouldBe("missing");
+        }
+
+        [Test]
+        public void RequestId_Should_Be_Lazy_And_Unique()
+        {
+            var r1 = Result.Success();
+            var r2 = Result.Success();
+            r1.RequestId.ShouldNotBeNullOrEmpty();
+            r2.RequestId.ShouldNotBeNullOrEmpty();
+            (r1.RequestId != r2.RequestId).ShouldBeTrue();
+        }
+
+        [Test]
+        public void IsFailed_Should_Be_Opposite_Of_IsSuccess()
+        {
+            Result.Success().IsFailed().ShouldBeFalse();
+            Result.Error().IsFailed().ShouldBeTrue();
+            Result.NotFound().IsFailed().ShouldBeTrue();
+        }
+
+        [Test]
+        public void From_Should_Create_With_Custom_Code()
+        {
+            var custom = new ResultCode("custom", 418);
+            var result = Result.From(custom, "I'm a teapot");
+            result.Status.ShouldBe(custom);
+            result.Code.ShouldBe("custom");
+            result.Message.ShouldBe("I'm a teapot");
+            result.IsSuccess.ShouldBeFalse();
+        }
+
+        [Test]
+        public void From_Null_Should_Throw()
+        {
+            LightAssert.ShouldThrow<ArgumentNullException>(() => Result.From(null));
+            LightAssert.ShouldThrow<ArgumentNullException>(() => Result<string>.From(null));
+        }
+
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        public void Success_With_Data(int id)
+        {
+            var intResult = Result<int>.Success(id);
+            intResult.Data.ShouldBe(id);
+            intResult.IsSuccess.ShouldBeTrue();
+            var strResult = Result<string>.Success($"ID-{id}");
+            strResult.Data.ShouldBe($"ID-{id}");
+            strResult.IsSuccess.ShouldBeTrue();
+        }
+
+        [Test]
+        public void Success_Null_Should_Return_Error()
+        {
+            var result = Result<string>.Success(null);
+            result.IsSuccess.ShouldBeFalse();
+            result.Code.ShouldBe("error");
+            result.Data.ShouldBeNull();
+            result.Message.ShouldBe("Data is null.");
+        }
+
+        [Test]
+        public void Null_Data_Should_Return_Error_Not_NotFound()
+        {
+            var result = Result<string>.Success(null);
+            result.Status.ShouldBe(ResultCode.Error);
+            (result.Status != ResultCode.NotFound).ShouldBeTrue();
+        }
+
+        [Test]
+        public void Error_Factories_Should_Have_Null_Data()
+        {
+            Result<string>.NotFound("x").Data.ShouldBeNull();
+            Result<string>.BadRequest("x").Data.ShouldBeNull();
+            Result<string>.Error("x").Data.ShouldBeNull();
+            Result<string>.Conflict("x").Data.ShouldBeNull();
+            Result<string>.Forbidden("x").Data.ShouldBeNull();
+            Result<string>.Unauthorized("x").Data.ShouldBeNull();
+        }
+
+        [Test]
+        public void Error_Factories_Should_Not_Be_Success()
+        {
+            Result<string>.NotFound().IsSuccess.ShouldBeFalse();
+            Result<string>.BadRequest().IsSuccess.ShouldBeFalse();
+            Result<string>.Error().IsSuccess.ShouldBeFalse();
+            Result<string>.Conflict().IsSuccess.ShouldBeFalse();
+            Result<string>.Forbidden().IsSuccess.ShouldBeFalse();
+            Result<string>.Unauthorized().IsSuccess.ShouldBeFalse();
+        }
+
+        [Test]
+        public void Implicit_T_To_ResultT_Success()
+        {
+            string data = "hello";
+            Result<string> result = data;
+            result.IsSuccess.ShouldBeTrue();
+            result.Data.ShouldBe("hello");
+            result.Code.ShouldBe("success");
+        }
+
+        [Test]
+        public void Implicit_T_To_ResultT_Null_Returns_Error()
+        {
+            string nullData = null;
+            Result<string> result = nullData;
+            result.IsSuccess.ShouldBeFalse();
+            result.Code.ShouldBe("error");
+            result.Data.ShouldBeNull();
+        }
+
+        [Test]
+        public void Implicit_ResultT_To_T_Success_Returns_Data()
+        {
+            Result<string> result = Result<string>.Success("hello");
+            string value = result;
+            value.ShouldBe("hello");
+        }
+
+        [Test]
+        public void Implicit_ResultT_To_T_Failed_Returns_Null()
+        {
+            Result<string> result = Result<string>.NotFound("not found");
+            string value = result;
+            value.ShouldBeNull();
+        }
+
+        [Test]
+        public void Implicit_ResultT_To_T_ValueType_Failed_Returns_Default()
+        {
+            Result<int> result = Result<int>.Error("fail");
+            int value = result;
+            value.ShouldBe(0);
+        }
+
+        [Test]
+        public void Implicit_ResultT_To_Result_Should_Preserve()
+        {
+            var typed = Result<string>.Success("data", "msg");
+            var requestId = typed.RequestId;
+            Result simple = typed;
+            simple.RequestId.ShouldBe(requestId);
+            simple.Status.ShouldBe(ResultCode.Success);
+            simple.Message.ShouldBe("msg");
+        }
+
+        [Test]
+        public void Implicit_Result_To_ResultT_Should_Preserve()
+        {
+            var simple = Result.NotFound("msg");
+            var requestId = simple.RequestId;
+            Result<string> typed = simple;
+            typed.RequestId.ShouldBe(requestId);
+            typed.Status.ShouldBe(ResultCode.NotFound);
+            typed.Message.ShouldBe("msg");
+        }
+
+        [Test]
+        public void ToHttpStatusCode_Should_Map_All_BuiltIn()
+        {
+            Result.Success().ToHttpStatusCode().ShouldBe(HttpStatusCode.OK);
+            Result.BadRequest().ToHttpStatusCode().ShouldBe(HttpStatusCode.BadRequest);
+            Result.Unauthorized().ToHttpStatusCode().ShouldBe(HttpStatusCode.Unauthorized);
+            Result.Forbidden().ToHttpStatusCode().ShouldBe(HttpStatusCode.Forbidden);
+            Result.NotFound().ToHttpStatusCode().ShouldBe(HttpStatusCode.NotFound);
+            Result.Conflict().ToHttpStatusCode().ShouldBe(HttpStatusCode.Conflict);
+            Result.Error().ToHttpStatusCode().ShouldBe(HttpStatusCode.InternalServerError);
+        }
+
+        [Test]
+        public void ToHttpStatusCode_Custom_Code()
+        {
+            var custom = new ResultCode("rate_limited", 429);
+            Result.From(custom).ToHttpStatusCode().ShouldBe((HttpStatusCode)429);
+        }
+
+        [Test]
+        public void ToHttpStatusCode_Unknown_Returns_500()
+        {
+            new Result().ToHttpStatusCode().ShouldBe(HttpStatusCode.InternalServerError);
+        }
+
+        [Test]
+        public void Serialize_Should_Not_Include_Status_Field()
+        {
+            var result = Result.Success("ok");
+            var json = JsonSerializer.Serialize(result);
+            Assert.That(json, Does.Contain(@"""Code"""));
+            Assert.That(json, Does.Contain(@"""IsSuccess"""));
+            Assert.That(json, Does.Contain(@"""Message"""));
+            Assert.That(json, Does.Not.Contain(@"""HttpStatus"""));
+            Assert.That(json, Does.Not.Contain(@"""Name"""));
+        }
+
+        [Test]
+        public void Deserialize_Should_Restore_Via_Code_Setter()
+        {
+            var original = Result.NotFound("not here");
+            var json = JsonSerializer.Serialize(original);
+            var restored = JsonSerializer.Deserialize<Result>(json);
+            restored.Code.ShouldBe("not_found");
+            restored.IsSuccess.ShouldBeFalse();
+            restored.Status.ShouldBe(ResultCode.NotFound);
+            restored.Message.ShouldBe("not here");
+        }
+
+        [Test]
+        public void Deserialize_ResultT_Should_Restore()
+        {
+            var original = Result<string>.Success("hello", "msg");
+            var json = JsonSerializer.Serialize(original);
+            var restored = JsonSerializer.Deserialize<Result<string>>(json);
+            restored.Code.ShouldBe("success");
+            restored.IsSuccess.ShouldBeTrue();
+            restored.Data.ShouldBe("hello");
+            restored.Message.ShouldBe("msg");
+        }
+
+        // ── PropertyOrderAttribute ─────────────────
+
+        [Test]
+        public void PropertyOrderAttribute_Should_Set_Order()
+        {
+            var attr = new PropertyOrderAttribute(5);
+            attr.Order.ShouldBe(5);
+        }
+
+        [Test]
+        public void PropertyOrderAttribute_Should_Have_Correct_Usage()
+        {
+            var usage = (AttributeUsageAttribute)Attribute.GetCustomAttribute(
+                typeof(PropertyOrderAttribute), typeof(AttributeUsageAttribute));
+            Assert.That(usage, Is.Not.Null);
+            Assert.That(usage.ValidOn, Is.EqualTo(AttributeTargets.Field | AttributeTargets.Property));
+            usage.AllowMultiple.ShouldBeFalse();
         }
     }
 }

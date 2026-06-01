@@ -1,55 +1,88 @@
-﻿using Light.Contracts;
+using Light.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 
 namespace Light.Extensions
 {
     public static class ResultExtensions
     {
-        public static ResultCode MapResultCode(this IResult result)
+        public static bool IsFailed(this IResult result)
         {
-            Enum.TryParse(result.Code, out ResultCode resultCode);
-            return resultCode;
+            return !result.IsSuccess;
         }
 
-        public static bool IsFailed(this IResult result) => !result.Succeeded;
+        public static HttpStatusCode ToHttpStatusCode(this IResult result)
+        {
+            if (result is ResultBase rb && rb.Status != null)
+                return (HttpStatusCode)rb.Status.HttpStatus;
 
-        public static PagedResult<T> ToPagedResult<T>(this IEnumerable<T> list, int page = 1, int pageSize = 10)
+            return HttpStatusCode.InternalServerError;
+        }
+
+        public static PagedResult<T> ToPagedResult<T>(
+            this IEnumerable<T> list, int pageNumber = 1, int pageSize = 10)
         {
             if (list == null)
             {
                 return new PagedResult<T>
                 {
-                    Code = ResultCode.error.ToString(),
+                    Status = ResultCode.Error,
                     Message = "The list is null.",
                 };
             }
 
-            page = page < 1 ? 1 : page;
+            pageNumber = pageNumber < 1 ? 1 : pageNumber;
             pageSize = pageSize < 1 ? 10 : pageSize;
-            var count = list.Count();
-            var data = list.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-            return new PagedResult<T>(data, page, pageSize, count);
+            if (!(list is IList<T> materialized))
+                materialized = list.ToList();
+
+            var count = materialized.Count;
+            var data = materialized
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new PagedResult<T>(data, pageNumber, pageSize, count);
         }
 
-        public static PagedResult<T> ToPagedResult<T>(this IEnumerable<T> list, IPage page) =>
-            list.ToPagedResult(page.Page, page.PageSize);
-
-        public static Paged<T> ToPaged<T>(this IEnumerable<T> list, int page = 1, int pageSize = 10)
+        public static PagedResult<T> ToPagedResult<T>(
+            this IEnumerable<T> list, IPage page)
         {
-            page = page < 1 ? 1 : page;
-            pageSize = pageSize < 1 ? 10 : pageSize;
-            var count = list.Count();
-            var data = list.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-            return new Paged<T>(data, page, pageSize, count);
+            if (page == null)
+                throw new ArgumentNullException(nameof(page));
+            return list.ToPagedResult(page.PageNumber, page.PageSize);
         }
 
-        public static Paged<T> ToPaged<T>(this IEnumerable<T> list, IPage page)
+        public static Paged<T> ToPaged<T>(
+            this IEnumerable<T> list, int pageNumber = 1, int pageSize = 10)
         {
-            return list.ToPaged(page.Page, page.PageSize);
+            if (list == null)
+                throw new ArgumentNullException(nameof(list));
+
+            pageNumber = pageNumber < 1 ? 1 : pageNumber;
+            pageSize = pageSize < 1 ? 10 : pageSize;
+
+            if (!(list is IList<T> materialized))
+                materialized = list.ToList();
+
+            var count = materialized.Count;
+            var data = materialized
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new Paged<T>(data, pageNumber, pageSize, count);
+        }
+
+        public static Paged<T> ToPaged<T>(
+            this IEnumerable<T> list, IPage page)
+        {
+            if (page == null)
+                throw new ArgumentNullException(nameof(page));
+            return list.ToPaged(page.PageNumber, page.PageSize);
         }
     }
 }

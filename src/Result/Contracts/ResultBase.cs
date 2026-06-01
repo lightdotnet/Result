@@ -1,14 +1,39 @@
-﻿using System;
+using System;
 
 namespace Light.Contracts
 {
     public abstract class ResultBase : IResult
     {
-        public virtual string RequestId { get; set; } = Guid.NewGuid().ToString();
+        private string _requestId;
 
-        public virtual string Code { get; set; }
+        public virtual string RequestId
+        {
+            get
+            {
+                if (_requestId == null)
+                    _requestId = Guid.NewGuid().ToString();
+                return _requestId;
+            }
+            set { _requestId = value; }
+        }
 
-        public virtual bool Succeeded { get; set; }
+        // Field — not serialized by any JSON library by default
+        public ResultCode Status = ResultCode.Unknown;
+
+        public string Code
+        {
+            get { return !(Status is null) ? Status.Name : ResultCode.Unknown.Name; }
+            set
+            {
+                if (!string.IsNullOrEmpty(value))
+                    Status = ResultCode.FromName(value);
+            }
+        }
+
+        public bool IsSuccess
+        {
+            get { return !(Status is null) && Status.IsSuccess; }
+        }
 
         public virtual string Message { get; set; } = "";
     }

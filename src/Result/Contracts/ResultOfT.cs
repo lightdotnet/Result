@@ -1,66 +1,83 @@
-﻿namespace Light.Contracts
+using System;
+
+namespace Light.Contracts
 {
     public class Result<T> : ResultBase, IResult<T>
     {
-        public Result() : base() { }
+        public Result() { }
 
-        protected internal Result(T data, string message)
+        protected internal Result(T data, string message = "")
         {
             if (data == null)
             {
-                Code = ResultCode.unknown.ToString();
+                Status = ResultCode.Error;
+                Message = string.IsNullOrEmpty(message) ? "Data is null." : message;
             }
             else
             {
-                Code = ResultCode.success.ToString();
-                Succeeded = true;
+                Status = ResultCode.Success;
                 Message = message;
                 Data = data;
             }
         }
 
-        protected internal Result(ResultCode code, string message)
+        protected internal Result(ResultCode status, string message = "")
         {
-            Code = code.ToString();
+            Status = status;
             Message = message;
         }
 
-        public static implicit operator T(Result<T> result) => result.Data;
-
-        public static implicit operator Result<T>(T data) => new Result<T>(data, "");
-
-        public static implicit operator Result(Result<T> result) => new Result
-        {
-            Code = result.Code,
-            Succeeded = result.Succeeded,
-            Message = result.Message
-        };
-
-        public static implicit operator Result<T>(Result result) => new Result<T>
-        {
-            Code = result.Code,
-            Succeeded = result.Succeeded,
-            Message = result.Message
-        };
-
         public virtual T Data { get; set; }
 
-        public static Result<T> Success(T data, string message = "") =>
-            new Result<T>(data, message);
+        // ── Built-in factories ──────────────────
+        public static Result<T> Success(T data, string message = "")
+            => new Result<T>(data, message);
 
-        public static Result<T> BadRequest(string message = "") =>
-            new Result<T>(ResultCode.bad_request, message);
+        public static Result<T> BadRequest(string message = "")
+            => new Result<T>(ResultCode.BadRequest, message);
 
-        public static Result<T> Forbidden(string message = "") =>
-            new Result<T>(ResultCode.forbidden, message);
+        public static Result<T> Forbidden(string message = "")
+            => new Result<T>(ResultCode.Forbidden, message);
 
-        public static Result<T> Unauthorized(string message = "") =>
-            new Result<T>(ResultCode.unauthorized, message);
+        public static Result<T> Unauthorized(string message = "")
+            => new Result<T>(ResultCode.Unauthorized, message);
 
-        public static Result<T> NotFound(string message = "") =>
-            new Result<T>(ResultCode.not_found, message);
+        public static Result<T> NotFound(string message = "")
+            => new Result<T>(ResultCode.NotFound, message);
 
-        public static Result<T> Error(string message = "") =>
-            new Result<T>(ResultCode.error, message);
+        public static Result<T> Conflict(string message = "")
+            => new Result<T>(ResultCode.Conflict, message);
+
+        public static Result<T> Error(string message = "")
+            => new Result<T>(ResultCode.Error, message);
+
+        public static Result<T> From(ResultCode status, string message = "")
+            => new Result<T>(
+                status ?? throw new ArgumentNullException(nameof(status)),
+                message);
+
+        // ── Implicit operators ──────────────────
+
+        // T → Result<T> (null → Error, follows Result pattern)
+        public static implicit operator Result<T>(T data) => new Result<T>(data);
+
+        // Result<T> → T (returns Data directly, developer checks IsSuccess)
+        public static implicit operator T(Result<T> result) => result.Data;
+
+        // Result<T> → Result (preserves RequestId)
+        public static implicit operator Result(Result<T> result) => new Result
+        {
+            RequestId = result.RequestId,
+            Status = result.Status,
+            Message = result.Message
+        };
+
+        // Result → Result<T> (preserves RequestId)
+        public static implicit operator Result<T>(Result result) => new Result<T>
+        {
+            RequestId = result.RequestId,
+            Status = result.Status,
+            Message = result.Message
+        };
     }
 }
