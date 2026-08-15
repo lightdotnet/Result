@@ -146,15 +146,15 @@ The library's headline promise is "implicit operators never throw" — the two m
 - [x] **P0** Fix README install command (`Light.Contracts` → `Lightsoft.Result`)
 - [x] **P0** Guard `Result<T> -> T` implicit operator against a null `Result<T>` instance
 - [x] **P0** Reconcile README's unqualified "no hidden throws" claims with its own Behavior Matrix
-- [ ] **P1** Make `IsFailed` null-safe (or intentionally leave it and document why it differs from `ToHttpStatusCode`)
-- [ ] **P1** Align `ToPaged`/`ToPagedResult` null-list philosophy
-- [ ] **P1** Clamp/guard paging math against integer overflow
-- [ ] **P1** Normalize null `message` on the `Result<T>` success branch
-- [ ] **P1** Consider thread-safety for `RequestId` lazy-init
-- [ ] **P1** Add `PagedResult<T>` factory methods and message-customization parity, or document the asymmetry
-- [ ] **P1** Make `ToHttpStatusCode` work for non-`ResultBase` `IResult` implementers, or document the limitation
-- [ ] **P1** Fix `IPage` get-only claim in README (or make the interface get-only)
-- [ ] **P2** Extract shared pagination helper to remove duplication
+- [x] **P1** Make `IsFailed` null-safe (or intentionally leave it and document why it differs from `ToHttpStatusCode`)
+- [x] **P1** Align `ToPaged`/`ToPagedResult` null-list philosophy — `ToPaged` is now null-safe (empty `Paged<T>`), matching `ToPagedResult`'s graceful pattern
+- [x] **P1** Clamp/guard paging math against integer overflow
+- [x] **P1** Normalize null `message` on the `Result<T>` success branch
+- [x] **P1** Consider thread-safety for `RequestId` lazy-init — double-checked locking + `volatile` (the explicit `RequestId` setter remains an unguarded escape hatch, a pre-existing tradeoff, not newly introduced)
+- [x] **P1** Add `PagedResult<T>` factory methods and message-customization parity, or document the asymmetry — decided **not** to add `BadRequest`/`NotFound`/etc. factories; `PagedResult<T>` stays success-oriented by design (a paging query returns data or a null-data Error, not arbitrary failure statuses). Message-customization parity (`message` param on the data constructor) was kept.
+- [x] **P1** Make `ToHttpStatusCode` work for non-`ResultBase` `IResult` implementers, or document the limitation
+- [x] **P1** Fix `IPage` get-only claim in README (or make the interface get-only) — kept `IPage` mutable (interface unchanged); README's Paging section reworded to state `IPage` is intentionally mutable while `IPaged`/`IPaged<T>` are get-only
+- [x] **P2** Extract shared pagination helper to remove duplication — `PagedExtensions.cs` now has a private `Slice<T>` helper shared by `ToPaged`/`ToPagedResult`; the `IPage`-overload duplication was also resolved by extension methods delegating to the primary overload
 - [ ] **P2** Drop unused `virtual` modifiers; remove or wire up `PropertyOrderAttribute`
 - [ ] **P2** Align expression-bodied style across `ResultBase.cs`/`Paged.cs`
 - [ ] **P2** Rename `Paged` constructor parameter `data` → `records`

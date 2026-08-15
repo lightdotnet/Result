@@ -16,7 +16,7 @@ namespace Light.Contracts
             else
             {
                 Status = ResultCode.Success;
-                Message = message;
+                Message = message ?? "";
                 Data = data;
             }
         }
@@ -24,12 +24,14 @@ namespace Light.Contracts
         protected internal Result(ResultCode status, string message = "")
         {
             Status = status;
-            Message = message;
+            Message = message ?? "";
         }
 
         public virtual T Data { get; set; }
 
         // ── Built-in factories ──────────────────
+        /// <summary>Creates a success result wrapping <paramref name="data"/>.</summary>
+        /// <remarks>If <paramref name="data"/> is null, this returns a failed result with <c>Status = ResultCode.Error</c> instead — the method name does not guarantee <c>IsSuccess == true</c>.</remarks>
         public static Result<T> Success(T data, string message = "")
             => new Result<T>(data, message);
 

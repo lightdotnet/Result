@@ -6,16 +6,17 @@ namespace Light.Contracts
     {
         public PagedResult() { }
 
-        public PagedResult(Paged<T> data)
+        public PagedResult(Paged<T> data, string message = "")
         {
             if (data == null)
             {
                 Status = ResultCode.Error;
-                Message = "Data is null.";
+                Message = string.IsNullOrEmpty(message) ? "Data is null." : message;
             }
             else
             {
                 Status = ResultCode.Success;
+                Message = message ?? "";
                 Data = data;
             }
         }

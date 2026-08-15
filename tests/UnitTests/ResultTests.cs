@@ -104,6 +104,13 @@ namespace UnitTests
         }
 
         [Test]
+        public void IsFailed_Null_Result_Should_Return_True()
+        {
+            IResult nullResult = null;
+            nullResult.IsFailed().ShouldBeTrue();
+        }
+
+        [Test]
         public void From_Should_Create_With_Custom_Code()
         {
             var custom = new ResultCode("custom", 418);
@@ -119,6 +126,19 @@ namespace UnitTests
         {
             LightAssert.ShouldThrow<ArgumentNullException>(() => Result.From(null));
             LightAssert.ShouldThrow<ArgumentNullException>(() => Result<string>.From(null));
+        }
+
+        [Test]
+        public void From_Null_Message_Should_Normalize_To_Empty()
+        {
+            Result.From(ResultCode.Error, null).Message.ShouldBe("");
+            Result<string>.From(ResultCode.Error, null).Message.ShouldBe("");
+        }
+
+        [Test]
+        public void Success_With_Data_Null_Message_Should_Normalize_To_Empty()
+        {
+            Result<string>.Success("hello", null).Message.ShouldBe("");
         }
 
         [TestCase(1)]
@@ -279,6 +299,23 @@ namespace UnitTests
         public void ToHttpStatusCode_Unknown_Returns_500()
         {
             new Result().ToHttpStatusCode().ShouldBe(HttpStatusCode.InternalServerError);
+        }
+
+        [Test]
+        public void ToHttpStatusCode_NonResultBase_IResult_Should_Resolve_Via_Code()
+        {
+            IResult custom = new PlainResult("not_found");
+            custom.ToHttpStatusCode().ShouldBe(HttpStatusCode.NotFound);
+        }
+
+        private sealed class PlainResult : IResult
+        {
+            public PlainResult(string code) => Code = code;
+
+            public string RequestId => "id";
+            public string Code { get; }
+            public bool IsSuccess => false;
+            public string Message => "";
         }
 
         [Test]

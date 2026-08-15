@@ -4,14 +4,21 @@ namespace Light.Contracts
 {
     public abstract class ResultBase : IResult
     {
-        private string _requestId;
+        private readonly object _requestIdLock = new object();
+        private volatile string _requestId;
 
         public virtual string RequestId
         {
             get
             {
                 if (_requestId == null)
-                    _requestId = Guid.NewGuid().ToString();
+                {
+                    lock (_requestIdLock)
+                    {
+                        if (_requestId == null)
+                            _requestId = Guid.NewGuid().ToString();
+                    }
+                }
                 return _requestId;
             }
             set { _requestId = value; }

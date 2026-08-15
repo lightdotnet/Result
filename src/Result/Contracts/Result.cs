@@ -9,7 +9,7 @@ namespace Light.Contracts
         protected internal Result(ResultCode status, string message = "")
         {
             Status = status;
-            Message = message;
+            Message = message ?? "";
         }
 
         public static Result Success(string message = "")

@@ -181,10 +181,10 @@ Result<string> typed = simple;       // Result -> Result<T>: preserves RequestId
 ## Paging
 
 ```csharp
-// Interfaces (all get-only)
-IPage       -> PageNumber, PageSize
-IPaged      -> TotalPages, TotalRecords, HasNextPage, HasPreviousPage
-IPaged<T>   -> Records
+// Interfaces
+IPage       -> PageNumber, PageSize (mutable — intended for binding page requests, e.g. from query params)
+IPaged      -> TotalPages, TotalRecords, HasNextPage, HasPreviousPage (get-only)
+IPaged<T>   -> Records (get-only)
 
 // Classes
 Paged       -> implements IPaged
@@ -195,6 +195,11 @@ PagedResult<T> -> ResultBase + IResult<Paged<T>>
 var paged = list.ToPaged(pageNumber: 1, pageSize: 10);
 var result = list.ToPagedResult(pageNumber: 1, pageSize: 10);
 
+// PagedResult<T> is success-oriented by design (no BadRequest/NotFound/etc. factories) —
+// a paging query either returns data (possibly an empty page) or a null-data Error;
+// it doesn't model arbitrary failure statuses the way Result/Result<T> do.
+new PagedResult<T>(pagedData, "message")  // null pagedData -> Error, message overridable
+
 // Implicit conversion
 Paged<int> data = pagedResult;  // null -> null (no throw)
 
@@ -204,6 +209,9 @@ Paged<int> data = pagedResult;  // null -> null (no throw)
 
 // Invalid values auto-clamped
 list.ToPagedResult(0, -1);  // pageNumber=1, pageSize=10
+
+// A pageNumber beyond the available data returns an empty page,
+// not a wrapped/negative-skip result (overflow-safe for large pageNumber)
 ```
 
 ---
@@ -214,10 +222,12 @@ list.ToPagedResult(0, -1);  // pageNumber=1, pageSize=10
 using Light.Extensions;
 
 // IsFailed
-result.IsFailed();  // true if !IsSuccess
+result.IsFailed();  // true if !IsSuccess (also true, not a throw, when result is null)
 
 // ToHttpStatusCode
 result.ToHttpStatusCode();  // Success -> 200, NotFound -> 404, etc.
+                             // works for any IResult, not just ResultBase-derived types
+                             // (resolves via ResultCode.FromName(result.Code))
 
 // ToPagedResult
 list.ToPagedResult(pageNumber, pageSize);
@@ -227,6 +237,7 @@ nullList.ToPagedResult();  // Error result (no throw)
 // ToPaged
 list.ToPaged(pageNumber, pageSize);
 list.ToPaged(iPage);
+nullList.ToPaged();         // empty Paged<T> (no throw)
 ```
 
 ---
@@ -273,9 +284,10 @@ Only **explicit method calls** with **required parameters** throw:
 | `new ResultCode(null)` | name is null | `ArgumentNullException` |
 | `Result.From(null)` | status is null | `ArgumentNullException` |
 | `Result<T>.From(null)` | status is null | `ArgumentNullException` |
-| `ToPaged(null list)` | list is null | `ArgumentNullException` |
 | `ToPagedResult(null IPage)` | page is null | `ArgumentNullException` |
 | `ToPaged(null IPage)` | page is null | `ArgumentNullException` |
+
+> `ToPaged(null list)` and `ToPagedResult(null list)` are both null-safe (return an empty `Paged<T>` / an Error result respectively) — only a null `IPage` **page argument** throws, since it's a required parameter object, not the data being paged.
 
 > Implicit operators **never** throw custom exceptions.
 
@@ -300,7 +312,7 @@ public virtual IActionResult Ok<T>(T data)
 ## Project Structure
 
 ```
-Result.Contracts/
+src/Result/Contracts/
 ├── ResultCode.cs          — Smart enum with built-in codes
 ├── IResult.cs             — IResult, IResult<T> interfaces
 ├── ResultBase.cs          — Abstract base (Status field, Code property)
@@ -311,8 +323,9 @@ Result.Contracts/
 ├── Paged.cs               — Paged, Paged<T> classes
 ├── PagedResult.cs         — PagedResult<T>
 ├── PropertyOrderAttribute.cs       — [PropertyOrder] attribute
-Result.Extensions/
-└── ResultExtensions.cs    — IsFailed, ToPaged, ToPagedResult
+src/Result/Extensions/
+├── ResultExtensions.cs    — IsFailed, ToHttpStatusCode
+└── PagedExtensions.cs     — ToPaged, ToPagedResult
 ```
 
 ---

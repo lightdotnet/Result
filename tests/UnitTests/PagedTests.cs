@@ -124,12 +124,15 @@ namespace UnitTests
         }
 
         [Test]
-        public void ToPaged_Null_List_Should_Throw()
+        public void ToPaged_Null_List_Should_Return_Empty()
         {
-            LightAssert.ShouldThrow<ArgumentNullException>(() =>
-            {
-                ((IEnumerable<int>)null).ToPaged();
-            });
+            var paged = ((IEnumerable<int>)null).ToPaged(0, -1);
+            paged.ShouldNotBeNull();
+            paged.PageNumber.ShouldBe(1);
+            paged.PageSize.ShouldBe(10);
+            paged.TotalRecords.ShouldBe(0);
+            paged.Records.ShouldNotBeNull();
+            paged.Records.Count().ShouldBe(0);
         }
 
         [Test]
@@ -185,6 +188,43 @@ namespace UnitTests
             var result = new PagedResult<int>();
             Paged<int> paged = result;
             paged.ShouldBeNull();
+        }
+
+        [Test]
+        public void ToPagedResult_Overflow_PageNumber_Should_Return_Empty()
+        {
+            var result = _list.ToPagedResult(int.MaxValue, 10);
+            result.IsSuccess.ShouldBeTrue();
+            result.Data.TotalRecords.ShouldBe(_totalRecords);
+            result.Data.Records.Count().ShouldBe(0);
+        }
+
+        [Test]
+        public void ToPaged_Overflow_PageNumber_Should_Return_Empty()
+        {
+            var paged = _list.ToPaged(int.MaxValue, 10);
+            paged.TotalRecords.ShouldBe(_totalRecords);
+            paged.Records.Count().ShouldBe(0);
+        }
+
+        [Test]
+        public void PagedResult_Constructor_NullData_Custom_Message_Should_Override_Default()
+        {
+            var result = new PagedResult<int>((Paged<int>)null, "custom error message");
+            result.IsSuccess.ShouldBeFalse();
+            result.Code.ShouldBe("error");
+            result.Data.ShouldBeNull();
+            result.Message.ShouldBe("custom error message");
+        }
+
+        [Test]
+        public void PagedResult_Constructor_Data_With_Message_Should_Preserve_Message()
+        {
+            var paged = _list.ToPaged(1, _pageSize);
+            var result = new PagedResult<int>(paged, "custom success message");
+            result.IsSuccess.ShouldBeTrue();
+            result.Data.ShouldBe(paged);
+            result.Message.ShouldBe("custom success message");
         }
     }
 }
