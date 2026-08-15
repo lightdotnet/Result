@@ -3,18 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers;
 
-/// <summary>
-/// Abstract BaseApi Controller Class
-/// </summary>
-
 [ApiController]
 [Route("api/[controller]")]
 public abstract class ApiControllerBase : ControllerBase
 {
-    /// <summary>
-    /// Default success response
-    /// </summary>
-    /// <returns></returns>
     [ApiExplorerSettings(IgnoreApi = true)]
     public new virtual IActionResult Ok()
     {

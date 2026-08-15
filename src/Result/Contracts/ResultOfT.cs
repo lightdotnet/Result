@@ -8,28 +8,24 @@ namespace Light.Contracts
 
         protected internal Result(T data, string message = "")
         {
-            if (data == null)
-            {
-                Status = ResultCode.Error;
-                Message = string.IsNullOrEmpty(message) ? "Data is null." : message;
-            }
-            else
-            {
-                Status = ResultCode.Success;
-                Message = message;
+            ResolveDataStatus(data != null, message, "Data is null.", out var status, out var resolvedMessage);
+            Status = status;
+            Message = resolvedMessage;
+            if (data != null)
                 Data = data;
-            }
         }
 
         protected internal Result(ResultCode status, string message = "")
         {
             Status = status;
-            Message = message;
+            Message = message ?? "";
         }
 
-        public virtual T Data { get; set; }
+        public T Data { get; set; }
 
         // ── Built-in factories ──────────────────
+        /// <summary>Creates a success result wrapping <paramref name="data"/>.</summary>
+        /// <remarks>If <paramref name="data"/> is null, this returns a failed result with <c>Status = ResultCode.Error</c> instead — the method name does not guarantee <c>IsSuccess == true</c>.</remarks>
         public static Result<T> Success(T data, string message = "")
             => new Result<T>(data, message);
 
@@ -61,8 +57,8 @@ namespace Light.Contracts
         // T → Result<T> (null → Error, follows Result pattern)
         public static implicit operator Result<T>(T data) => new Result<T>(data);
 
-        // Result<T> → T (returns Data directly, developer checks IsSuccess)
-        public static implicit operator T(Result<T> result) => result.Data;
+        // Result<T> → T (returns Data directly, developer checks IsSuccess; null instance → default)
+        public static implicit operator T(Result<T> result) => result == null ? default : result.Data;
 
         // Result<T> → Result (preserves RequestId)
         public static implicit operator Result(Result<T> result) => new Result

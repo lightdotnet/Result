@@ -5,7 +5,7 @@
 
 A lightweight, zero-dependency Result Pattern library for .NET Standard 2.0+ / C# 7.3+.
 
-Provides a consistent, predictable way to return success/failure from services and APIs — **without hidden exceptions from implicit operators**.
+Provides a consistent, predictable way to return success/failure from services and APIs — **without hidden *custom* exceptions from implicit operators** (converting a null `Result`/`Result<T>` instance across the two types still throws the standard `NullReferenceException` — see the Behavior Matrix below).
 
 ---
 
@@ -14,7 +14,7 @@ Provides a consistent, predictable way to return success/failure from services a
 - **Result Pattern** — `Result`, `Result<T>`, `PagedResult<T>`
 - **Smart ResultCode** — class-based enum with `Name`, `HttpStatus`, `IsSuccess`
 - **Zero dependency** — no JSON library required; `Status` field auto-excluded from serialization
-- **No hidden throws** — all implicit operators are safe (return null/default instead of throwing)
+- **No hidden custom throws** — implicit operators never throw a custom exception; most return null/default on null input, except converting a null instance between `Result` and `Result<T>`, which throws the standard `NullReferenceException` (see Behavior Matrix)
 - **Paging built-in** — `Paged<T>`, `PagedResult<T>`, `ToPaged()`, `ToPagedResult()`
 - **Serialization-friendly** — clean JSON output, `Code` setter supports deserialization
 - **.NET Standard 2.0** — compatible with .NET Framework 4.6.1+, .NET Core 2.0+, .NET 5+
@@ -24,7 +24,7 @@ Provides a consistent, predictable way to return success/failure from services a
 ## Installation
 
 ```
-dotnet add package Light.Contracts
+dotnet add package Lightsoft.Result
 ```
 
 ---
@@ -161,6 +161,8 @@ Result simple = r;                   // Result<T> -> Result: preserves RequestId
 Result<string> typed = simple;       // Result -> Result<T>: preserves RequestId
 ```
 
+> **Note:** `Data` has a public setter (needed for `System.Text.Json`/`Newtonsoft.Json` reflection-based deserialization — a get-only `Data` silently breaks JSON round-tripping since neither library can otherwise populate it). This means `Data` can be reassigned after construction, which can desync it from `IsSuccess`/`Status` (e.g. setting `Data = null` on an already-`Success` result does **not** flip it back to `Error`). Treat post-construction mutation as unsupported; the factories/implicit operators are the source of truth for a consistent state. Same caveat applies to `PagedResult<T>.Data`.
+
 ---
 
 ## Implicit Operators - Behavior Matrix
@@ -168,23 +170,23 @@ Result<string> typed = simple;       // Result -> Result<T>: preserves RequestId
 | Operator | null input | Behavior |
 |----------|-----------|----------|
 | `T -> Result<T>` | null | Error result (`Code = "error"`) |
-| `Result<T> -> T` | -- | Returns `.Data` (may be null/default) |
-| `Result<T> -> Result` | null | NullReferenceException (standard .NET) |
-| `Result -> Result<T>` | null | NullReferenceException (standard .NET) |
+| `Result<T> -> T` | null `Result<T>` instance, or null `.Data` | Returns `default(T)` |
+| `Result<T> -> Result` | null `Result<T>` instance | `NullReferenceException` (standard .NET) |
+| `Result -> Result<T>` | null `Result` instance | `NullReferenceException` (standard .NET) |
 | `ResultCode -> string` | null | Returns `null` |
 | `PagedResult<T> -> Paged<T>` | null | Returns `null` |
 
-> **Design principle:** Implicit operators **never throw custom exceptions**. Developer checks `IsSuccess` before accessing `Data`.
+> **Design principle:** Implicit operators **never throw custom exceptions**. Converting `null` data, or a null `Result<T>` instance to `T`, safely returns `default`/`null`. The two exceptions are the `Result<T> <-> Result` conversions: converting a **null instance** across these two types still throws the standard `NullReferenceException`, since there is no instance to read `RequestId`/`Status`/`Message` from. Developer checks `IsSuccess` before accessing `Data`.
 
 ---
 
 ## Paging
 
 ```csharp
-// Interfaces (all get-only)
-IPage       -> PageNumber, PageSize
-IPaged      -> TotalPages, TotalRecords, HasNextPage, HasPreviousPage
-IPaged<T>   -> Records
+// Interfaces
+IPage       -> PageNumber, PageSize (mutable — intended for binding page requests, e.g. from query params)
+IPaged      -> TotalPages, TotalRecords, HasNextPage, HasPreviousPage (get-only)
+IPaged<T>   -> Records (get-only)
 
 // Classes
 Paged       -> implements IPaged
@@ -195,6 +197,11 @@ PagedResult<T> -> ResultBase + IResult<Paged<T>>
 var paged = list.ToPaged(pageNumber: 1, pageSize: 10);
 var result = list.ToPagedResult(pageNumber: 1, pageSize: 10);
 
+// PagedResult<T> is success-oriented by design (no BadRequest/NotFound/etc. factories) —
+// a paging query either returns data (possibly an empty page) or a null-data Error;
+// it doesn't model arbitrary failure statuses the way Result/Result<T> do.
+new PagedResult<T>(pagedData, "message")  // null pagedData -> Error, message overridable
+
 // Implicit conversion
 Paged<int> data = pagedResult;  // null -> null (no throw)
 
@@ -204,6 +211,9 @@ Paged<int> data = pagedResult;  // null -> null (no throw)
 
 // Invalid values auto-clamped
 list.ToPagedResult(0, -1);  // pageNumber=1, pageSize=10
+
+// A pageNumber beyond the available data returns an empty page,
+// not a wrapped/negative-skip result (overflow-safe for large pageNumber)
 ```
 
 ---
@@ -214,10 +224,12 @@ list.ToPagedResult(0, -1);  // pageNumber=1, pageSize=10
 using Light.Extensions;
 
 // IsFailed
-result.IsFailed();  // true if !IsSuccess
+result.IsFailed();  // true if !IsSuccess (also true, not a throw, when result is null)
 
 // ToHttpStatusCode
 result.ToHttpStatusCode();  // Success -> 200, NotFound -> 404, etc.
+                             // works for any IResult, not just ResultBase-derived types
+                             // (resolves via ResultCode.FromName(result.Code))
 
 // ToPagedResult
 list.ToPagedResult(pageNumber, pageSize);
@@ -227,6 +239,7 @@ nullList.ToPagedResult();  // Error result (no throw)
 // ToPaged
 list.ToPaged(pageNumber, pageSize);
 list.ToPaged(iPage);
+nullList.ToPaged();         // empty Paged<T> (no throw)
 ```
 
 ---
@@ -273,9 +286,13 @@ Only **explicit method calls** with **required parameters** throw:
 | `new ResultCode(null)` | name is null | `ArgumentNullException` |
 | `Result.From(null)` | status is null | `ArgumentNullException` |
 | `Result<T>.From(null)` | status is null | `ArgumentNullException` |
-| `ToPaged(null list)` | list is null | `ArgumentNullException` |
 | `ToPagedResult(null IPage)` | page is null | `ArgumentNullException` |
 | `ToPaged(null IPage)` | page is null | `ArgumentNullException` |
+| `JsonSerializer.Deserialize<ResultCode>(json)` | JSON is missing the `"Name"` field | `ArgumentNullException` |
+
+> `ToPaged(null list)` and `ToPagedResult(null list)` are both null-safe (return an empty `Paged<T>` / an Error result respectively) — only a null `IPage` **page argument** throws, since it's a required parameter object, not the data being paged.
+>
+> `ResultCode`'s JSON deserialization binds to its constructor by matching parameter names to JSON properties; a JSON payload missing `"Name"` passes `null` through to the constructor's required parameter, which throws. Missing `"HttpStatus"`/`"IsSuccess"` fields instead silently default to `500`/`false` — only the required `name` parameter throws.
 
 > Implicit operators **never** throw custom exceptions.
 
@@ -300,7 +317,7 @@ public virtual IActionResult Ok<T>(T data)
 ## Project Structure
 
 ```
-Result.Contracts/
+src/Result/Contracts/
 ├── ResultCode.cs          — Smart enum with built-in codes
 ├── IResult.cs             — IResult, IResult<T> interfaces
 ├── ResultBase.cs          — Abstract base (Status field, Code property)
@@ -310,9 +327,9 @@ Result.Contracts/
 ├── IPaged.cs              — IPaged, IPaged<T> interfaces
 ├── Paged.cs               — Paged, Paged<T> classes
 ├── PagedResult.cs         — PagedResult<T>
-├── PropertyOrderAttribute.cs       — [PropertyOrder] attribute
-Result.Extensions/
-└── ResultExtensions.cs    — IsFailed, ToPaged, ToPagedResult
+src/Result/Extensions/
+├── ResultExtensions.cs    — IsFailed, ToHttpStatusCode
+└── PagedExtensions.cs     — ToPaged, ToPagedResult
 ```
 
 ---

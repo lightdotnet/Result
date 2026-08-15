@@ -4,14 +4,21 @@ namespace Light.Contracts
 {
     public abstract class ResultBase : IResult
     {
-        private string _requestId;
+        private readonly object _requestIdLock = new object();
+        private volatile string _requestId;
 
-        public virtual string RequestId
+        public string RequestId
         {
             get
             {
                 if (_requestId == null)
-                    _requestId = Guid.NewGuid().ToString();
+                {
+                    lock (_requestIdLock)
+                    {
+                        if (_requestId == null)
+                            _requestId = Guid.NewGuid().ToString();
+                    }
+                }
                 return _requestId;
             }
             set { _requestId = value; }
@@ -30,11 +37,23 @@ namespace Light.Contracts
             }
         }
 
-        public bool IsSuccess
-        {
-            get { return !(Status is null) && Status.IsSuccess; }
-        }
+        public bool IsSuccess => !(Status is null) && Status.IsSuccess;
 
-        public virtual string Message { get; set; } = "";
+        public string Message { get; set; } = "";
+
+        // Shared "no data → Error, has data → Success" resolution used by Result<T> and PagedResult<T> constructors.
+        private protected static void ResolveDataStatus(bool hasData, string message, string nullMessage, out ResultCode status, out string resolvedMessage)
+        {
+            if (!hasData)
+            {
+                status = ResultCode.Error;
+                resolvedMessage = string.IsNullOrEmpty(message) ? nullMessage : message;
+            }
+            else
+            {
+                status = ResultCode.Success;
+                resolvedMessage = message ?? "";
+            }
+        }
     }
 }

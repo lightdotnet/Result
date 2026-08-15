@@ -28,6 +28,9 @@ namespace Light.Contracts
         // ── FromName (for deserialization) ──────────
         public static ResultCode FromName(string name)
         {
+            // Intentional: treat empty string the same as null → Unknown, to avoid creating an
+            // "invisible" custom ResultCode with no name (an empty Name would be indistinguishable
+            // from "no code" when displayed/logged).
             if (string.IsNullOrEmpty(name)) return Unknown;
             if (name == Success.Name) return Success;
             if (name == BadRequest.Name) return BadRequest;

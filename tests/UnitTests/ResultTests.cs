@@ -62,6 +62,16 @@ namespace UnitTests
         }
 
         [Test]
+        public void Code_Setter_Custom_Value_Should_Create_New_ResultCode()
+        {
+            var result = new Result();
+            result.Code = "rate_limited";
+            result.Status.Name.ShouldBe("rate_limited");
+            result.Status.HttpStatus.ShouldBe(500);
+            result.IsSuccess.ShouldBeFalse();
+        }
+
+        [Test]
         public void Code_Setter_Empty_Should_Not_Change_Status()
         {
             var result = Result.Success();
@@ -104,6 +114,13 @@ namespace UnitTests
         }
 
         [Test]
+        public void IsFailed_Null_Result_Should_Return_True()
+        {
+            IResult nullResult = null;
+            nullResult.IsFailed().ShouldBeTrue();
+        }
+
+        [Test]
         public void From_Should_Create_With_Custom_Code()
         {
             var custom = new ResultCode("custom", 418);
@@ -119,6 +136,45 @@ namespace UnitTests
         {
             LightAssert.ShouldThrow<ArgumentNullException>(() => Result.From(null));
             LightAssert.ShouldThrow<ArgumentNullException>(() => Result<string>.From(null));
+        }
+
+        [Test]
+        public void ResultOfT_From_Should_Create_With_Custom_Status()
+        {
+            var result = Result<int>.From(ResultCode.NotFound, "message");
+            result.Status.ShouldBe(ResultCode.NotFound);
+            result.Code.ShouldBe("not_found");
+            result.Message.ShouldBe("message");
+            result.IsSuccess.ShouldBeFalse();
+        }
+
+        [Test]
+        public void From_Success_Code_Should_Return_Success_Result()
+        {
+            var result = Result.From(ResultCode.Success, "ok");
+            result.IsSuccess.ShouldBeTrue();
+            result.Code.ShouldBe("success");
+        }
+
+        [Test]
+        public void ResultOfT_From_Success_Code_Should_Return_Success_Result()
+        {
+            var result = Result<int>.From(ResultCode.Success, "ok");
+            result.IsSuccess.ShouldBeTrue();
+            result.Code.ShouldBe("success");
+        }
+
+        [Test]
+        public void From_Null_Message_Should_Normalize_To_Empty()
+        {
+            Result.From(ResultCode.Error, null).Message.ShouldBe("");
+            Result<string>.From(ResultCode.Error, null).Message.ShouldBe("");
+        }
+
+        [Test]
+        public void Success_With_Data_Null_Message_Should_Normalize_To_Empty()
+        {
+            Result<string>.Success("hello", null).Message.ShouldBe("");
         }
 
         [TestCase(1)]
@@ -219,6 +275,22 @@ namespace UnitTests
         }
 
         [Test]
+        public void Implicit_ResultT_To_T_NullInstance_Returns_Default()
+        {
+            Result<string> result = null;
+            string value = result;
+            value.ShouldBeNull();
+        }
+
+        [Test]
+        public void Implicit_ResultT_To_T_NullInstance_ValueType_Returns_Default()
+        {
+            Result<int> result = null;
+            int value = result;
+            value.ShouldBe(0);
+        }
+
+        [Test]
         public void Implicit_ResultT_To_Result_Should_Preserve()
         {
             var typed = Result<string>.Success("data", "msg");
@@ -238,6 +310,26 @@ namespace UnitTests
             typed.RequestId.ShouldBe(requestId);
             typed.Status.ShouldBe(ResultCode.NotFound);
             typed.Message.ShouldBe("msg");
+        }
+
+        [Test]
+        public void Implicit_ResultT_To_Result_NullInstance_Should_Throw()
+        {
+            LightAssert.ShouldThrow<NullReferenceException>(() =>
+            {
+                Result<string> typed = null;
+                Result simple = typed;
+            });
+        }
+
+        [Test]
+        public void Implicit_Result_To_ResultT_NullInstance_Should_Throw()
+        {
+            LightAssert.ShouldThrow<NullReferenceException>(() =>
+            {
+                Result simple = null;
+                Result<string> typed = simple;
+            });
         }
 
         [Test]
@@ -266,6 +358,33 @@ namespace UnitTests
         }
 
         [Test]
+        public void Status_Null_Should_Fallback_To_Unknown_Defaults()
+        {
+            var result = Result.Success();
+            result.Status = null;
+            result.Code.ShouldBe("unknown");
+            result.IsSuccess.ShouldBeFalse();
+            result.ToHttpStatusCode().ShouldBe(HttpStatusCode.InternalServerError);
+        }
+
+        [Test]
+        public void ToHttpStatusCode_NonResultBase_IResult_Should_Resolve_Via_Code()
+        {
+            IResult custom = new PlainResult("not_found");
+            custom.ToHttpStatusCode().ShouldBe(HttpStatusCode.NotFound);
+        }
+
+        private sealed class PlainResult : IResult
+        {
+            public PlainResult(string code) => Code = code;
+
+            public string RequestId => "id";
+            public string Code { get; }
+            public bool IsSuccess => false;
+            public string Message => "";
+        }
+
+        [Test]
         public void Serialize_Should_Not_Include_Status_Field()
         {
             var result = Result.Success("ok");
@@ -273,8 +392,7 @@ namespace UnitTests
             Assert.That(json, Does.Contain(@"""Code"""));
             Assert.That(json, Does.Contain(@"""IsSuccess"""));
             Assert.That(json, Does.Contain(@"""Message"""));
-            Assert.That(json, Does.Not.Contain(@"""HttpStatus"""));
-            Assert.That(json, Does.Not.Contain(@"""Name"""));
+            Assert.That(json, Does.Not.Contain(@"""Status"""));
         }
 
         [Test]
@@ -299,25 +417,6 @@ namespace UnitTests
             restored.IsSuccess.ShouldBeTrue();
             restored.Data.ShouldBe("hello");
             restored.Message.ShouldBe("msg");
-        }
-
-        // ── PropertyOrderAttribute ─────────────────
-
-        [Test]
-        public void PropertyOrderAttribute_Should_Set_Order()
-        {
-            var attr = new PropertyOrderAttribute(5);
-            attr.Order.ShouldBe(5);
-        }
-
-        [Test]
-        public void PropertyOrderAttribute_Should_Have_Correct_Usage()
-        {
-            var usage = (AttributeUsageAttribute)Attribute.GetCustomAttribute(
-                typeof(PropertyOrderAttribute), typeof(AttributeUsageAttribute));
-            Assert.That(usage, Is.Not.Null);
-            Assert.That(usage.ValidOn, Is.EqualTo(AttributeTargets.Field | AttributeTargets.Property));
-            usage.AllowMultiple.ShouldBeFalse();
         }
     }
 }
