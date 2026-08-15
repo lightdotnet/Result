@@ -2,7 +2,7 @@
 
 Full-codebase re-audit (not diff-based), produced by running the four review agents in `.claude/agents/` (`dotnet-correctness-reviewer`, `dotnet-simplicity-reviewer`, `dotnet-test-quality-reviewer`, `dotnet-api-reviewer`) against `src/Result/`, `tests/UnitTests/`, `samples/WebApi/`, and `README.md`, then de-duplicated and prioritized by hand.
 
-This supersedes all previous reviews: every finding from prior passes has been independently re-verified as fixed on the current `init-claude` branch (94/94 tests passing, clean build under `<LangVersion>7.3</LangVersion>`) and removed from this document.
+This supersedes all previous reviews: every finding from prior passes has been independently re-verified as fixed on the current `init-claude` branch (94/94 tests passing, clean build) and removed from this document.
 
 **Current status: no open findings.** The sections below are kept as a record of decisions made during the last review cycle, in case any get revisited.
 

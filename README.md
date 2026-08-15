@@ -337,7 +337,7 @@ src/Result/Extensions/
 ## Target Framework
 
 - **.NET Standard 2.0** (`netstandard2.0`)
-- **C# 7.3** compatible — enforced by `<LangVersion>7.3</LangVersion>` in `Result.csproj`
+- **C# 7.3** compatible
 - **Zero external dependencies**
 
 ---
