@@ -1,4 +1,6 @@
 #nullable disable
+using System.Text.Json;
+
 namespace UnitTests
 {
     [TestFixture]
@@ -137,6 +139,40 @@ namespace UnitTests
             var custom = ResultCode.FromName("rate_limited");
             custom.Name.ShouldBe("rate_limited");
             custom.HttpStatus.ShouldBe(500);
+        }
+
+        [Test]
+        public void Serialize_Should_Include_Name_HttpStatus_IsSuccess()
+        {
+            var json = JsonSerializer.Serialize(ResultCode.NotFound);
+
+            Assert.That(json, Does.Contain(@"""Name"":""not_found"""));
+            Assert.That(json, Does.Contain(@"""HttpStatus"":404"));
+            Assert.That(json, Does.Contain(@"""IsSuccess"":false"));
+        }
+
+        [Test]
+        public void Deserialize_Should_Restore_BuiltIn_Values()
+        {
+            var json = JsonSerializer.Serialize(ResultCode.Success);
+            var restored = JsonSerializer.Deserialize<ResultCode>(json);
+
+            restored.Name.ShouldBe("success");
+            restored.HttpStatus.ShouldBe(200);
+            restored.IsSuccess.ShouldBeTrue();
+        }
+
+        [Test]
+        public void Deserialize_Should_Restore_Custom_Values()
+        {
+            var custom = new ResultCode("rate_limited", 429, false);
+            var json = JsonSerializer.Serialize(custom);
+            var restored = JsonSerializer.Deserialize<ResultCode>(json);
+
+            restored.Name.ShouldBe("rate_limited");
+            restored.HttpStatus.ShouldBe(429);
+            restored.IsSuccess.ShouldBeFalse();
+            restored.ShouldBe(custom);
         }
     }
 }

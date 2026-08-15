@@ -92,6 +92,8 @@ namespace UnitTests
             var result = nullList.ToPagedResult();
             result.IsSuccess.ShouldBeFalse();
             result.Code.ShouldBe("error");
+            result.Message.ShouldBe("The list is null.");
+            result.Data.ShouldBeNull();
         }
 
         [Test]
@@ -104,11 +106,31 @@ namespace UnitTests
         }
 
         [Test]
-        public void ToPagedResult_Should_Clamp_Invalid_Values()
+        public void ToPagedResult_Should_Clamp_Invalid_PageNumber()
         {
-            var result = _list.ToPagedResult(0, -1);
+            var result = _list.ToPagedResult(0, _pageSize);
             result.Data.PageNumber.ShouldBe(1);
+        }
+
+        [Test]
+        public void ToPagedResult_Should_Clamp_Invalid_PageSize()
+        {
+            var result = _list.ToPagedResult(1, -1);
             result.Data.PageSize.ShouldBe(10);
+        }
+
+        [Test]
+        public void ToPaged_Should_Clamp_Invalid_PageNumber()
+        {
+            var paged = _list.ToPaged(0, _pageSize);
+            paged.PageNumber.ShouldBe(1);
+        }
+
+        [Test]
+        public void ToPaged_Should_Clamp_Invalid_PageSize()
+        {
+            var paged = _list.ToPaged(1, -1);
+            paged.PageSize.ShouldBe(10);
         }
 
         [Test]
@@ -205,6 +227,64 @@ namespace UnitTests
             var paged = _list.ToPaged(int.MaxValue, 10);
             paged.TotalRecords.ShouldBe(_totalRecords);
             paged.Records.Count().ShouldBe(0);
+        }
+
+        [Test]
+        public void ToPagedResult_Empty_List_Should_Return_Zero_Records()
+        {
+            var result = new List<int>().ToPagedResult(1, _pageSize);
+            result.IsSuccess.ShouldBeTrue();
+            result.Data.TotalRecords.ShouldBe(0);
+            result.Data.Records.Count().ShouldBe(0);
+        }
+
+        [Test]
+        public void ToPaged_Empty_List_Should_Return_Zero_Records()
+        {
+            var paged = new List<int>().ToPaged(1, _pageSize);
+            paged.TotalRecords.ShouldBe(0);
+            paged.Records.Count().ShouldBe(0);
+        }
+
+        [Test]
+        public void ToPagedResult_Partial_Last_Page_Should_Return_Remaining_Records()
+        {
+            var list = Enumerable.Range(1, 11).ToList();
+            var result = list.ToPagedResult(3, 5);
+            result.Data.TotalPages.ShouldBe(3);
+            result.Data.Records.Count().ShouldBe(1);
+            result.Data.Records.Single().ShouldBe(11);
+        }
+
+        [Test]
+        public void ToPaged_Partial_Last_Page_Should_Return_Remaining_Records()
+        {
+            var list = Enumerable.Range(1, 11).ToList();
+            var paged = list.ToPaged(3, 5);
+            paged.TotalPages.ShouldBe(3);
+            paged.Records.Count().ShouldBe(1);
+            paged.Records.Single().ShouldBe(11);
+        }
+
+        [Test]
+        public void ToPagedResult_Lazy_Enumerable_Should_Page_Correctly()
+        {
+            IEnumerable<int> lazy = Enumerable.Range(1, 20).Where(x => x % 2 == 0);
+            var result = lazy.ToPagedResult(1, 5);
+            result.IsSuccess.ShouldBeTrue();
+            result.Data.TotalRecords.ShouldBe(10);
+            result.Data.Records.Count().ShouldBe(5);
+            result.Data.Records.First().ShouldBe(2);
+        }
+
+        [Test]
+        public void ToPaged_Lazy_Enumerable_Should_Page_Correctly()
+        {
+            IEnumerable<int> lazy = Enumerable.Range(1, 20).Where(x => x % 2 == 0);
+            var paged = lazy.ToPaged(1, 5);
+            paged.TotalRecords.ShouldBe(10);
+            paged.Records.Count().ShouldBe(5);
+            paged.Records.First().ShouldBe(2);
         }
 
         [Test]

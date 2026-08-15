@@ -58,13 +58,14 @@ namespace WebApi.Controllers
             return Ok(Result.Error());
         }
 
-        [HttpGet("find")]
-        public IActionResult FindValue()
+        [HttpGet("find/{id}")]
+        public IActionResult FindValue(int id)
         {
-            var model = _list.Select(s => s.ToString()).FirstOrDefault(x => x == "A");
-            return Ok(model);
+            var result = _list.Contains(id)
+                ? Result<int>.Success(id)
+                : Result<int>.NotFound($"Value {id} not found.");
+            return Ok(result);
         }
-
 
         [HttpGet("paged")]
         public IActionResult GetPaged(int page = 1, int pageSize = 10)
@@ -98,39 +99,6 @@ namespace WebApi.Controllers
             var errorT = Result<string>.Error("Error1");
 
             return Ok(new { error, errorT });
-        }
-    }
-
-    public static class ResultService
-    {
-        public static Result GetSuccess()
-        {
-            return Result.Success();
-        }
-
-        public static Result GetError()
-        {
-            return Result.Error();
-        }
-
-        public static Result<int> GetSuccessData()
-        {
-            return Result<int>.Success(1);
-        }
-
-        public static Result<int> GetErrorData()
-        {
-            return Result.Error("Error when get ID");
-        }
-
-        public static string GetId()
-        {
-            return Result<string>.Success(Guid.NewGuid().ToString());
-        }
-
-        public static string GetIdButError()
-        {
-            return Result<string>.Error();
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Light.Contracts
             Message = message ?? "";
         }
 
-        public virtual T Data { get; set; }
+        public T Data { get; set; }
 
         // ── Built-in factories ──────────────────
         /// <summary>Creates a success result wrapping <paramref name="data"/>.</summary>

@@ -155,9 +155,10 @@ The library's headline promise is "implicit operators never throw" — the two m
 - [x] **P1** Make `ToHttpStatusCode` work for non-`ResultBase` `IResult` implementers, or document the limitation
 - [x] **P1** Fix `IPage` get-only claim in README (or make the interface get-only) — kept `IPage` mutable (interface unchanged); README's Paging section reworded to state `IPage` is intentionally mutable while `IPaged`/`IPaged<T>` are get-only
 - [x] **P2** Extract shared pagination helper to remove duplication — `PagedExtensions.cs` now has a private `Slice<T>` helper shared by `ToPaged`/`ToPagedResult`; the `IPage`-overload duplication was also resolved by extension methods delegating to the primary overload
-- [ ] **P2** Drop unused `virtual` modifiers; remove or wire up `PropertyOrderAttribute`
-- [ ] **P2** Align expression-bodied style across `ResultBase.cs`/`Paged.cs`
-- [ ] **P2** Rename `Paged` constructor parameter `data` → `records`
-- [ ] **P2** Fix README "Project Structure" paths; pin `<LangVersion>7.3</LangVersion>`
-- [ ] Add the ~10 missing tests listed above (start with the two null-instance NRE tests — they're the only untested rows of the README's own documented contract)
-- [ ] Clean up `samples/WebApi` per the three items above
+- [x] **P2** Drop unused `virtual` modifiers; remove or wire up `PropertyOrderAttribute` — dropped `virtual` from `RequestId`/`Message`/`Result<T>.Data`; user decided to **remove** `PropertyOrderAttribute` entirely (breaking change for any external consumer using it, though it had zero effect). Both flagged as public-API-surface changes per CLAUDE.md rule 5.
+- [x] **P2** Align expression-bodied style across `ResultBase.cs`/`Paged.cs` — `IsSuccess`, `HasPreviousPage`, `HasNextPage` converted
+- [x] **P2** Rename `Paged` constructor parameter `data` → `records` — source-breaking only for named-argument callers (`data:`); none exist in this repo
+- [x] **P2** Fix README "Project Structure" paths; pin `<LangVersion>7.3</LangVersion>` — both done; build verified clean under the pin
+- [x] Add the ~10 missing tests listed above — all closed (null-instance NRE tests, `Status = null` guards, `ToPaged` clamp coverage, empty-list, partial-last-page, out-of-range pageNumber, lazy-`IEnumerable<T>` materialization branch, `Result<T>.From` success path, strengthened weak assertions). 90/90 tests passing.
+- [x] Clean up `samples/WebApi` per the three items above — trimmed restating/empty XML docs on `ApiControllerBase`; `FindValue` now demonstrates a real success/not-found path; `ResultService` moved to its own file
+- [x] Added JSON serialize/deserialize test coverage for `ResultCode` (not in original review, requested separately) — confirms `System.Text.Json`'s single-constructor parameter matching round-trips it correctly despite get-only properties

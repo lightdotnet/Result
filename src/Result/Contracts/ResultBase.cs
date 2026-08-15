@@ -7,7 +7,7 @@ namespace Light.Contracts
         private readonly object _requestIdLock = new object();
         private volatile string _requestId;
 
-        public virtual string RequestId
+        public string RequestId
         {
             get
             {
@@ -37,11 +37,8 @@ namespace Light.Contracts
             }
         }
 
-        public bool IsSuccess
-        {
-            get { return !(Status is null) && Status.IsSuccess; }
-        }
+        public bool IsSuccess => !(Status is null) && Status.IsSuccess;
 
-        public virtual string Message { get; set; } = "";
+        public string Message { get; set; } = "";
     }
 }

@@ -129,6 +129,32 @@ namespace UnitTests
         }
 
         [Test]
+        public void ResultOfT_From_Should_Create_With_Custom_Status()
+        {
+            var result = Result<int>.From(ResultCode.NotFound, "message");
+            result.Status.ShouldBe(ResultCode.NotFound);
+            result.Code.ShouldBe("not_found");
+            result.Message.ShouldBe("message");
+            result.IsSuccess.ShouldBeFalse();
+        }
+
+        [Test]
+        public void From_Success_Code_Should_Return_Success_Result()
+        {
+            var result = Result.From(ResultCode.Success, "ok");
+            result.IsSuccess.ShouldBeTrue();
+            result.Code.ShouldBe("success");
+        }
+
+        [Test]
+        public void ResultOfT_From_Success_Code_Should_Return_Success_Result()
+        {
+            var result = Result<int>.From(ResultCode.Success, "ok");
+            result.IsSuccess.ShouldBeTrue();
+            result.Code.ShouldBe("success");
+        }
+
+        [Test]
         public void From_Null_Message_Should_Normalize_To_Empty()
         {
             Result.From(ResultCode.Error, null).Message.ShouldBe("");
@@ -277,6 +303,26 @@ namespace UnitTests
         }
 
         [Test]
+        public void Implicit_ResultT_To_Result_NullInstance_Should_Throw()
+        {
+            LightAssert.ShouldThrow<NullReferenceException>(() =>
+            {
+                Result<string> typed = null;
+                Result simple = typed;
+            });
+        }
+
+        [Test]
+        public void Implicit_Result_To_ResultT_NullInstance_Should_Throw()
+        {
+            LightAssert.ShouldThrow<NullReferenceException>(() =>
+            {
+                Result simple = null;
+                Result<string> typed = simple;
+            });
+        }
+
+        [Test]
         public void ToHttpStatusCode_Should_Map_All_BuiltIn()
         {
             Result.Success().ToHttpStatusCode().ShouldBe(HttpStatusCode.OK);
@@ -299,6 +345,16 @@ namespace UnitTests
         public void ToHttpStatusCode_Unknown_Returns_500()
         {
             new Result().ToHttpStatusCode().ShouldBe(HttpStatusCode.InternalServerError);
+        }
+
+        [Test]
+        public void Status_Null_Should_Fallback_To_Unknown_Defaults()
+        {
+            var result = Result.Success();
+            result.Status = null;
+            result.Code.ShouldBe("unknown");
+            result.IsSuccess.ShouldBeFalse();
+            result.ToHttpStatusCode().ShouldBe(HttpStatusCode.InternalServerError);
         }
 
         [Test]
@@ -326,8 +382,7 @@ namespace UnitTests
             Assert.That(json, Does.Contain(@"""Code"""));
             Assert.That(json, Does.Contain(@"""IsSuccess"""));
             Assert.That(json, Does.Contain(@"""Message"""));
-            Assert.That(json, Does.Not.Contain(@"""HttpStatus"""));
-            Assert.That(json, Does.Not.Contain(@"""Name"""));
+            Assert.That(json, Does.Not.Contain(@"""Status"""));
         }
 
         [Test]
@@ -352,25 +407,6 @@ namespace UnitTests
             restored.IsSuccess.ShouldBeTrue();
             restored.Data.ShouldBe("hello");
             restored.Message.ShouldBe("msg");
-        }
-
-        // ── PropertyOrderAttribute ─────────────────
-
-        [Test]
-        public void PropertyOrderAttribute_Should_Set_Order()
-        {
-            var attr = new PropertyOrderAttribute(5);
-            attr.Order.ShouldBe(5);
-        }
-
-        [Test]
-        public void PropertyOrderAttribute_Should_Have_Correct_Usage()
-        {
-            var usage = (AttributeUsageAttribute)Attribute.GetCustomAttribute(
-                typeof(PropertyOrderAttribute), typeof(AttributeUsageAttribute));
-            Assert.That(usage, Is.Not.Null);
-            Assert.That(usage.ValidOn, Is.EqualTo(AttributeTargets.Field | AttributeTargets.Property));
-            usage.AllowMultiple.ShouldBeFalse();
         }
     }
 }

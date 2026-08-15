@@ -322,7 +322,6 @@ src/Result/Contracts/
 ├── IPaged.cs              — IPaged, IPaged<T> interfaces
 ├── Paged.cs               — Paged, Paged<T> classes
 ├── PagedResult.cs         — PagedResult<T>
-├── PropertyOrderAttribute.cs       — [PropertyOrder] attribute
 src/Result/Extensions/
 ├── ResultExtensions.cs    — IsFailed, ToHttpStatusCode
 └── PagedExtensions.cs     — ToPaged, ToPagedResult
@@ -333,7 +332,7 @@ src/Result/Extensions/
 ## Target Framework
 
 - **.NET Standard 2.0** (`netstandard2.0`)
-- **C# 7.3** compatible
+- **C# 7.3** compatible — enforced by `<LangVersion>7.3</LangVersion>` in `Result.csproj`
 - **Zero external dependencies**
 
 ---
