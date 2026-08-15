@@ -61,8 +61,8 @@ namespace Light.Contracts
         // T → Result<T> (null → Error, follows Result pattern)
         public static implicit operator Result<T>(T data) => new Result<T>(data);
 
-        // Result<T> → T (returns Data directly, developer checks IsSuccess)
-        public static implicit operator T(Result<T> result) => result.Data;
+        // Result<T> → T (returns Data directly, developer checks IsSuccess; null instance → default)
+        public static implicit operator T(Result<T> result) => result == null ? default : result.Data;
 
         // Result<T> → Result (preserves RequestId)
         public static implicit operator Result(Result<T> result) => new Result

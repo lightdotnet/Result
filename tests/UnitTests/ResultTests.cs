@@ -219,6 +219,22 @@ namespace UnitTests
         }
 
         [Test]
+        public void Implicit_ResultT_To_T_NullInstance_Returns_Default()
+        {
+            Result<string> result = null;
+            string value = result;
+            value.ShouldBeNull();
+        }
+
+        [Test]
+        public void Implicit_ResultT_To_T_NullInstance_ValueType_Returns_Default()
+        {
+            Result<int> result = null;
+            int value = result;
+            value.ShouldBe(0);
+        }
+
+        [Test]
         public void Implicit_ResultT_To_Result_Should_Preserve()
         {
             var typed = Result<string>.Success("data", "msg");

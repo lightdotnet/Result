@@ -5,7 +5,7 @@
 
 A lightweight, zero-dependency Result Pattern library for .NET Standard 2.0+ / C# 7.3+.
 
-Provides a consistent, predictable way to return success/failure from services and APIs — **without hidden exceptions from implicit operators**.
+Provides a consistent, predictable way to return success/failure from services and APIs — **without hidden *custom* exceptions from implicit operators** (converting a null `Result`/`Result<T>` instance across the two types still throws the standard `NullReferenceException` — see the Behavior Matrix below).
 
 ---
 
@@ -14,7 +14,7 @@ Provides a consistent, predictable way to return success/failure from services a
 - **Result Pattern** — `Result`, `Result<T>`, `PagedResult<T>`
 - **Smart ResultCode** — class-based enum with `Name`, `HttpStatus`, `IsSuccess`
 - **Zero dependency** — no JSON library required; `Status` field auto-excluded from serialization
-- **No hidden throws** — all implicit operators are safe (return null/default instead of throwing)
+- **No hidden custom throws** — implicit operators never throw a custom exception; most return null/default on null input, except converting a null instance between `Result` and `Result<T>`, which throws the standard `NullReferenceException` (see Behavior Matrix)
 - **Paging built-in** — `Paged<T>`, `PagedResult<T>`, `ToPaged()`, `ToPagedResult()`
 - **Serialization-friendly** — clean JSON output, `Code` setter supports deserialization
 - **.NET Standard 2.0** — compatible with .NET Framework 4.6.1+, .NET Core 2.0+, .NET 5+
@@ -24,7 +24,7 @@ Provides a consistent, predictable way to return success/failure from services a
 ## Installation
 
 ```
-dotnet add package Light.Contracts
+dotnet add package Lightsoft.Result
 ```
 
 ---
@@ -168,13 +168,13 @@ Result<string> typed = simple;       // Result -> Result<T>: preserves RequestId
 | Operator | null input | Behavior |
 |----------|-----------|----------|
 | `T -> Result<T>` | null | Error result (`Code = "error"`) |
-| `Result<T> -> T` | -- | Returns `.Data` (may be null/default) |
-| `Result<T> -> Result` | null | NullReferenceException (standard .NET) |
-| `Result -> Result<T>` | null | NullReferenceException (standard .NET) |
+| `Result<T> -> T` | null `Result<T>` instance, or null `.Data` | Returns `default(T)` |
+| `Result<T> -> Result` | null `Result<T>` instance | `NullReferenceException` (standard .NET) |
+| `Result -> Result<T>` | null `Result` instance | `NullReferenceException` (standard .NET) |
 | `ResultCode -> string` | null | Returns `null` |
 | `PagedResult<T> -> Paged<T>` | null | Returns `null` |
 
-> **Design principle:** Implicit operators **never throw custom exceptions**. Developer checks `IsSuccess` before accessing `Data`.
+> **Design principle:** Implicit operators **never throw custom exceptions**. Converting `null` data, or a null `Result<T>` instance to `T`, safely returns `default`/`null`. The two exceptions are the `Result<T> <-> Result` conversions: converting a **null instance** across these two types still throws the standard `NullReferenceException`, since there is no instance to read `RequestId`/`Status`/`Message` from. Developer checks `IsSuccess` before accessing `Data`.
 
 ---
 

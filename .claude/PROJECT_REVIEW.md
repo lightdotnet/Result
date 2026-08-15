@@ -143,9 +143,9 @@ The library's headline promise is "implicit operators never throw" — the two m
 
 ## Summary checklist
 
-- [ ] **P0** Fix README install command (`Light.Contracts` → `Lightsoft.Result`)
-- [ ] **P0** Guard `Result<T> -> T` implicit operator against a null `Result<T>` instance
-- [ ] **P0** Reconcile README's unqualified "no hidden throws" claims with its own Behavior Matrix
+- [x] **P0** Fix README install command (`Light.Contracts` → `Lightsoft.Result`)
+- [x] **P0** Guard `Result<T> -> T` implicit operator against a null `Result<T>` instance
+- [x] **P0** Reconcile README's unqualified "no hidden throws" claims with its own Behavior Matrix
 - [ ] **P1** Make `IsFailed` null-safe (or intentionally leave it and document why it differs from `ToHttpStatusCode`)
 - [ ] **P1** Align `ToPaged`/`ToPagedResult` null-list philosophy
 - [ ] **P1** Clamp/guard paging math against integer overflow
