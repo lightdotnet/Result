@@ -8,17 +8,11 @@ namespace Light.Contracts
 
         public PagedResult(Paged<T> data, string message = "")
         {
-            if (data == null)
-            {
-                Status = ResultCode.Error;
-                Message = string.IsNullOrEmpty(message) ? "Data is null." : message;
-            }
-            else
-            {
-                Status = ResultCode.Success;
-                Message = message ?? "";
+            ResolveDataStatus(data != null, message, "Data is null.", out var status, out var resolvedMessage);
+            Status = status;
+            Message = resolvedMessage;
+            if (data != null)
                 Data = data;
-            }
         }
 
         public PagedResult(IEnumerable<T> data, int pageNumber, int pageSize, int totalRecords)

@@ -69,6 +69,16 @@ namespace UnitTests
         }
 
         [Test]
+        public void Equals_Object_Should_Compare_By_Name()
+        {
+            ResultCode code = ResultCode.Success;
+
+            code.Equals((object)ResultCode.Success).ShouldBeTrue();
+            code.Equals((object)"success").ShouldBeFalse();
+            code.Equals((object)null).ShouldBeFalse();
+        }
+
+        [Test]
         public void ToString_Should_Return_Name()
         {
             ResultCode.Success.ToString().ShouldBe("success");
@@ -173,6 +183,22 @@ namespace UnitTests
             restored.HttpStatus.ShouldBe(429);
             restored.IsSuccess.ShouldBeFalse();
             restored.ShouldBe(custom);
+        }
+
+        [Test]
+        public void Deserialize_Missing_Name_Should_Throw_ArgumentNullException()
+        {
+            LightAssert.ShouldThrow<ArgumentNullException>(() =>
+                JsonSerializer.Deserialize<ResultCode>(@"{""HttpStatus"":200,""IsSuccess"":true}"));
+        }
+
+        [Test]
+        public void Deserialize_Missing_Optional_Fields_Should_Use_Defaults()
+        {
+            var restored = JsonSerializer.Deserialize<ResultCode>(@"{""Name"":""custom""}");
+            restored.Name.ShouldBe("custom");
+            restored.HttpStatus.ShouldBe(500);
+            restored.IsSuccess.ShouldBeFalse();
         }
     }
 }

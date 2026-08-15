@@ -40,5 +40,20 @@ namespace Light.Contracts
         public bool IsSuccess => !(Status is null) && Status.IsSuccess;
 
         public string Message { get; set; } = "";
+
+        // Shared "no data → Error, has data → Success" resolution used by Result<T> and PagedResult<T> constructors.
+        private protected static void ResolveDataStatus(bool hasData, string message, string nullMessage, out ResultCode status, out string resolvedMessage)
+        {
+            if (!hasData)
+            {
+                status = ResultCode.Error;
+                resolvedMessage = string.IsNullOrEmpty(message) ? nullMessage : message;
+            }
+            else
+            {
+                status = ResultCode.Success;
+                resolvedMessage = message ?? "";
+            }
+        }
     }
 }

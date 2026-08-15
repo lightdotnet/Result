@@ -161,6 +161,8 @@ Result simple = r;                   // Result<T> -> Result: preserves RequestId
 Result<string> typed = simple;       // Result -> Result<T>: preserves RequestId
 ```
 
+> **Note:** `Data` has a public setter (needed for `System.Text.Json`/`Newtonsoft.Json` reflection-based deserialization — a get-only `Data` silently breaks JSON round-tripping since neither library can otherwise populate it). This means `Data` can be reassigned after construction, which can desync it from `IsSuccess`/`Status` (e.g. setting `Data = null` on an already-`Success` result does **not** flip it back to `Error`). Treat post-construction mutation as unsupported; the factories/implicit operators are the source of truth for a consistent state. Same caveat applies to `PagedResult<T>.Data`.
+
 ---
 
 ## Implicit Operators - Behavior Matrix
@@ -286,8 +288,11 @@ Only **explicit method calls** with **required parameters** throw:
 | `Result<T>.From(null)` | status is null | `ArgumentNullException` |
 | `ToPagedResult(null IPage)` | page is null | `ArgumentNullException` |
 | `ToPaged(null IPage)` | page is null | `ArgumentNullException` |
+| `JsonSerializer.Deserialize<ResultCode>(json)` | JSON is missing the `"Name"` field | `ArgumentNullException` |
 
 > `ToPaged(null list)` and `ToPagedResult(null list)` are both null-safe (return an empty `Paged<T>` / an Error result respectively) — only a null `IPage` **page argument** throws, since it's a required parameter object, not the data being paged.
+>
+> `ResultCode`'s JSON deserialization binds to its constructor by matching parameter names to JSON properties; a JSON payload missing `"Name"` passes `null` through to the constructor's required parameter, which throws. Missing `"HttpStatus"`/`"IsSuccess"` fields instead silently default to `500`/`false` — only the required `name` parameter throws.
 
 > Implicit operators **never** throw custom exceptions.
 

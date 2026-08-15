@@ -8,17 +8,11 @@ namespace Light.Contracts
 
         protected internal Result(T data, string message = "")
         {
-            if (data == null)
-            {
-                Status = ResultCode.Error;
-                Message = string.IsNullOrEmpty(message) ? "Data is null." : message;
-            }
-            else
-            {
-                Status = ResultCode.Success;
-                Message = message ?? "";
+            ResolveDataStatus(data != null, message, "Data is null.", out var status, out var resolvedMessage);
+            Status = status;
+            Message = resolvedMessage;
+            if (data != null)
                 Data = data;
-            }
         }
 
         protected internal Result(ResultCode status, string message = "")

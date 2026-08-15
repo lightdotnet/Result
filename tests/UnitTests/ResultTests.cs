@@ -62,6 +62,16 @@ namespace UnitTests
         }
 
         [Test]
+        public void Code_Setter_Custom_Value_Should_Create_New_ResultCode()
+        {
+            var result = new Result();
+            result.Code = "rate_limited";
+            result.Status.Name.ShouldBe("rate_limited");
+            result.Status.HttpStatus.ShouldBe(500);
+            result.IsSuccess.ShouldBeFalse();
+        }
+
+        [Test]
         public void Code_Setter_Empty_Should_Not_Change_Status()
         {
             var result = Result.Success();
